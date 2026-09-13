@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { GameProvider } from '../state/GameProvider';
 import { saveSave } from '../storage/save';
 import { makeSave } from '../test/factories';
+import { stageKey, TIERS } from '../types';
 import App from '../App';
 
 vi.mock('../data/questions', () => {
@@ -74,6 +75,24 @@ test('기록이 없으면 이어서 하기가 첫 카테고리를 가리킨다',
   saveSave(makeSave());
   renderApp();
   expect(screen.getByText(/한국사부터 시작하기/)).toBeInTheDocument();
+});
+
+test('마지막 플레이 카테고리를 다 깼으면 다음 카테고리로 표시한다', () => {
+  const stages: Record<string, { cleared: boolean; bestCorrect: number; plays: number }> = {};
+  // Mark all korean-history stages as cleared
+  for (const tier of TIERS) {
+    for (const stage of [1, 2, 3] as const) {
+      stages[stageKey('korean-history', tier, stage)] = { cleared: true, bestCorrect: 3, plays: 1 };
+    }
+  }
+  saveSave(makeSave({
+    stages,
+    lastPlayed: { category: 'korean-history', tier: 'basic', stage: 1 },
+  }));
+  renderApp();
+  // Should show world-history (next category), not "이어서 하기"
+  expect(screen.getByText(/세계사부터 시작하기/)).toBeInTheDocument();
+  expect(screen.queryByText(/이어서 하기/)).not.toBeInTheDocument();
 });
 
 test('카테고리 칩을 누르면 카테고리 화면으로 간다', async () => {

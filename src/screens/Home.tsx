@@ -67,7 +67,7 @@ export default function Home() {
       <div style={{ display: 'grid', gap: 8, marginBottom: 18 }}>
         <ThickButton onClick={startResume}>
           {resume
-            ? save.lastPlayed
+            ? resume.category === save.lastPlayed?.category
               ? `이어서 하기 · ${CATEGORY_BY_ID[resume.category].name} ${TIER_NAMES[resume.tier]} ${resume.stage}`
               : `${CATEGORY_BY_ID[resume.category].name}부터 시작하기`
             : '모든 스테이지를 깼어요'}
