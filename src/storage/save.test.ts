@@ -56,3 +56,20 @@ test('초기화하면 저장 값이 지워진다', () => {
   clearSave();
   expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
 });
+
+test('저장할 수 없으면 unavailable을 돌리고 죽지 않는다', () => {
+  const spy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+    throw new Error('denied');
+  });
+  const result = saveSave(makeSave({ totalPrize: 5000 }));
+  expect(result).toBe('unavailable');
+  spy.mockRestore();
+});
+
+test('초기화할 수 없으면 죽지 않는다', () => {
+  const spy = vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => {
+    throw new Error('denied');
+  });
+  expect(() => clearSave()).not.toThrow();
+  spy.mockRestore();
+});
