@@ -133,3 +133,39 @@ test('해설이 열린 뒤에는 아이템을 쓸 수 없다', () => {
   const s = answerCurrent(fresh(), 1);
   expect(canUseItem(s, 'hint', 999_999)).toBe(false);
 });
+
+test('OX 문제에서 applyItem으로 반반 찬스를 써도 아무 변화가 없다', () => {
+  const ox = [makeQuestion({ id: 'sc-b-01', type: 'ox', choices: ['O', 'X'], answerIndex: 0 })];
+  const s = startSession({ kind: 'daily' }, ox, [false]);
+  const t = applyItem(s, 'half', mulberry32(3));
+  expect(t.removedChoices[0]).toBeUndefined();
+  expect(t.spent).toBe(0);
+  expect(t).toEqual(s);
+});
+
+test('이미 답을 고른 뒤 applyItem으로 패스해도 결과와 비용이 바뀌지 않는다', () => {
+  const answered = answerCurrent(fresh(), 1);
+  const s = applyItem(answered, 'pass', mulberry32(3));
+  expect(s.results[0]).toBe('correct');
+  expect(s.revealed).toBe(true);
+  expect(s.spent).toBe(0);
+  expect(s).toEqual(answered);
+});
+
+test('끝난 세션에 applyItem을 써도 예외 없이 그대로 반환된다', () => {
+  let s = fresh();
+  for (let i = 0; i < 5; i++) {
+    s = advance(answerCurrent(s, 1));
+  }
+  expect(isFinished(s)).toBe(true);
+  expect(() => applyItem(s, 'half', mulberry32(3))).not.toThrow();
+  const t = applyItem(s, 'half', mulberry32(3));
+  expect(t).toEqual(s);
+});
+
+test('같은 아이템을 applyItem으로 두 번 써도 두 번째는 아무 변화가 없다', () => {
+  const s = applyItem(fresh(), 'hint', mulberry32(3));
+  const t = applyItem(s, 'hint', mulberry32(3));
+  expect(t).toEqual(s);
+  expect(t.spent).toBe(ITEM_PRICE.hint);
+});

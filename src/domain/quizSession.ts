@@ -77,16 +77,23 @@ export function isCleared(s: QuizSession): boolean {
   return correctCount(s) >= CLEAR_THRESHOLD;
 }
 
+// 세션 상태만으로 판단할 수 있는 금지 규칙(지갑 잔액 제외).
+// canUseItem과 applyItem이 서로 다른 기준으로 어긋나지 않도록 여기 한 곳에서만 정의한다.
+function isItemBlockedByState(s: QuizSession, item: ItemId): boolean {
+  if (isFinished(s) || s.revealed) return true;
+  if ((s.usedItems[s.index] ?? []).includes(item)) return true;
+  if (item === 'half' && currentQuestion(s).type === 'ox') return true;
+  return false;
+}
+
 export function canUseItem(s: QuizSession, item: ItemId, wallet: number): boolean {
-  if (isFinished(s) || s.revealed) return false;
-  if ((s.usedItems[s.index] ?? []).includes(item)) return false;
+  if (isItemBlockedByState(s, item)) return false;
   if (wallet < ITEM_PRICE[item]) return false;
-  if (item === 'half' && currentQuestion(s).type === 'ox') return false;
   return true;
 }
 
 export function applyItem(s: QuizSession, item: ItemId, rng: () => number): QuizSession {
-  if ((s.usedItems[s.index] ?? []).includes(item)) return s;
+  if (isItemBlockedByState(s, item)) return s;
 
   const used = { ...s.usedItems, [s.index]: [...(s.usedItems[s.index] ?? []), item] };
   const base = { ...s, usedItems: used, spent: s.spent + ITEM_PRICE[item] };
