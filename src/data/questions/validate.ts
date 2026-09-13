@@ -37,6 +37,16 @@ export function validateQuestions(questions: Question[], category: CategoryId): 
     if (q.type === 'choice' && answer && q.hint.includes(answer)) {
       errors.push(`${at} 힌트에 정답 누설: "${answer}"`);
     }
+    // OX는 정답이 'O'/'X' 한 글자라 단순 포함 검사를 쓰면 'OECD', 'X선' 같은
+    // 멀쩡한 힌트까지 걸린다. 대신 "정답을 말하는 어법"만 좁게 잡는다:
+    // '정답'이나 '답' 뒤에 조사(은/는/이/가)·문장부호(:,：)·공백·여는 따옴표를
+    // 임의 순서로 사이에 두고 정답 글자가 오는 경우만 누설로 본다.
+    if (q.type === 'ox' && (answer === 'O' || answer === 'X')) {
+      const oxLeakPattern = new RegExp(`(정답|답)[은는이가]?\\s*[:：]?\\s*['"“‘]?\\s*${answer}\\b`);
+      if (oxLeakPattern.test(q.hint)) {
+        errors.push(`${at} 힌트에 정답 누설: "${answer}"`);
+      }
+    }
 
     if (!WRITTEN_AT.test(q.writtenAt)) errors.push(`${at} writtenAt 형식 오류: ${q.writtenAt}`);
   }

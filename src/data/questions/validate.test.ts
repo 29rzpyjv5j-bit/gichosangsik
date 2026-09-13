@@ -60,9 +60,17 @@ test('보기 중복을 잡아낸다', () => {
 });
 
 test('빈 문항·힌트·해설을 잡아낸다', () => {
-  const bank = fullBank();
-  bank[0] = { ...bank[0], hint: '  ' };
-  expect(validateQuestions(bank, 'science').join(' ')).toContain('힌트');
+  const withEmptyPrompt = fullBank();
+  withEmptyPrompt[0] = { ...withEmptyPrompt[0], prompt: '  ' };
+  expect(validateQuestions(withEmptyPrompt, 'science').join(' ')).toContain('문항');
+
+  const withEmptyHint = fullBank();
+  withEmptyHint[0] = { ...withEmptyHint[0], hint: '  ' };
+  expect(validateQuestions(withEmptyHint, 'science').join(' ')).toContain('힌트');
+
+  const withEmptyExplanation = fullBank();
+  withEmptyExplanation[0] = { ...withEmptyExplanation[0], explanation: '  ' };
+  expect(validateQuestions(withEmptyExplanation, 'science').join(' ')).toContain('해설');
 });
 
 test('힌트에 정답이 그대로 들어 있으면 잡아낸다', () => {
@@ -74,6 +82,60 @@ test('힌트에 정답이 그대로 들어 있으면 잡아낸다', () => {
     hint: '정답은 100도예요.',
   };
   expect(validateQuestions(bank, 'science').join(' ')).toContain('정답 누설');
+});
+
+function oxBank(hint: string, answerIndex: 0 | 1 = 0): Question[] {
+  const bank = fullBank();
+  bank[0] = {
+    ...bank[0],
+    type: 'ox',
+    choices: ['O', 'X'],
+    answerIndex,
+    hint,
+  };
+  return bank;
+}
+
+test('OX 힌트가 "정답은 O예요"처럼 정답을 말하면 잡아낸다', () => {
+  const errors = validateQuestions(oxBank('정답은 O예요', 0), 'science').join(' ');
+  expect(errors).toContain('정답 누설');
+});
+
+test('OX 힌트가 "답: O"처럼 정답을 말하면 잡아낸다', () => {
+  const errors = validateQuestions(oxBank('답: O', 0), 'science').join(' ');
+  expect(errors).toContain('정답 누설');
+});
+
+test('OX 힌트가 "정답 O"처럼 정답을 말하면 잡아낸다', () => {
+  const errors = validateQuestions(oxBank('정답 O', 0), 'science').join(' ');
+  expect(errors).toContain('정답 누설');
+});
+
+test('OX 힌트가 "답은 O입니다"처럼 정답을 말하면 잡아낸다', () => {
+  const errors = validateQuestions(oxBank('답은 O입니다', 0), 'science').join(' ');
+  expect(errors).toContain('정답 누설');
+});
+
+test('OX 힌트에 "OECD"처럼 O가 단어 속에 있으면 잡지 않는다', () => {
+  const errors = validateQuestions(oxBank('OECD가 어떤 기구인지 떠올려 보세요', 0), 'science');
+  expect(errors.join(' ')).not.toContain('정답 누설');
+});
+
+test('OX 힌트에 "X선"처럼 X가 단어 속에 있으면 잡지 않는다', () => {
+  // 정답은 X (answerIndex 1) 인 문제라도 'X선'은 정답을 말하는 어법이 아니다.
+  const errors = validateQuestions(oxBank('X선 사진을 생각해보세요', 1), 'science');
+  expect(errors.join(' ')).not.toContain('정답 누설');
+});
+
+test('OX 힌트가 오답을 말하면 잡지 않는다', () => {
+  // 정답은 O(answerIndex 0)인데 힌트는 "정답은 X"라고 틀린 글자를 말함 - 누설이 아님
+  const errors = validateQuestions(oxBank('정답은 X입니다', 0), 'science');
+  expect(errors.join(' ')).not.toContain('정답 누설');
+});
+
+test('OX 힌트에 "답"이라는 단어만 있고 정답 글자가 없으면 잡지 않는다', () => {
+  const errors = validateQuestions(oxBank('이 답은 생각보다 단순해요', 0), 'science');
+  expect(errors.join(' ')).not.toContain('정답 누설');
 });
 
 test('카테고리가 파일과 다르면 잡아낸다', () => {
