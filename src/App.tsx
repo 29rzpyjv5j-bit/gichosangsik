@@ -4,6 +4,7 @@ import Categories from './screens/Categories';
 import CategoryDetail from './screens/CategoryDetail';
 import Quiz from './screens/Quiz';
 import Result from './screens/Result';
+import WrongNotes from './screens/WrongNotes';
 
 export default function App() {
   return (
@@ -13,6 +14,7 @@ export default function App() {
       <Route path="/category/:categoryId" element={<CategoryDetail />} />
       <Route path="/quiz" element={<Quiz />} />
       <Route path="/result" element={<Result />} />
+      <Route path="/wrong-notes" element={<WrongNotes />} />
     </Routes>
   );
 }
