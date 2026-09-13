@@ -1,5 +1,5 @@
 import {
-  isStageCleared, isTierUnlocked, isStageUnlocked, clearedCount,
+  isTierUnlocked, isStageUnlocked, clearedCount,
   tierUnlockHint, nextStage, nextStageAnywhere,
 } from './unlock';
 import { makeSave } from '../test/factories';
