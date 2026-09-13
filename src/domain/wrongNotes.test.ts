@@ -39,3 +39,21 @@ test('문제별 정답·오답 횟수를 기록한다', () => {
   s = recordAnswer(s, 'kh-b-01', true);
   expect(s.questionStats['kh-b-01']).toEqual({ correct: 2, wrong: 1 });
 });
+
+test('resolveWrongNote는 원래 상태의 wrongNotes를 바꾸지 않는다', () => {
+  const before = makeSave({ wrongNotes: ['kh-b-03', 'sc-m-07'] });
+  resolveWrongNote(before, 'kh-b-03');
+  expect(before.wrongNotes).toEqual(['kh-b-03', 'sc-m-07']);
+  expect(before.wrongNotes.length).toBe(2);
+});
+
+test('recordAnswer는 원래 상태의 questionStats를 바꾸지 않는다', () => {
+  const before = makeSave({
+    questionStats: { 'kh-b-01': { correct: 1, wrong: 0 } },
+  });
+  const originalStats = before.questionStats['kh-b-01'];
+  recordAnswer(before, 'kh-b-01', true);
+  expect(before.questionStats['kh-b-01']).toEqual({ correct: 1, wrong: 0 });
+  expect(before.questionStats['kh-b-01']).toBe(originalStats);
+  expect(Object.keys(before.questionStats)).toEqual(['kh-b-01']);
+});
