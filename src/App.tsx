@@ -6,6 +6,8 @@ import Quiz from './screens/Quiz';
 import Result from './screens/Result';
 import WrongNotes from './screens/WrongNotes';
 import Badges from './screens/Badges';
+import Shop from './screens/Shop';
+import Profile from './screens/Profile';
 
 export default function App() {
   return (
@@ -17,6 +19,8 @@ export default function App() {
       <Route path="/result" element={<Result />} />
       <Route path="/wrong-notes" element={<WrongNotes />} />
       <Route path="/badges" element={<Badges />} />
+      <Route path="/shop" element={<Shop />} />
+      <Route path="/profile" element={<Profile />} />
     </Routes>
   );
 }
