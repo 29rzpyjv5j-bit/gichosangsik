@@ -81,3 +81,10 @@ test('카테고리 목록에 7개와 진행률이 보인다', () => {
   expect(screen.getByText('시사')).toBeInTheDocument();
   expect(screen.getByText('1/9')).toBeInTheDocument();
 });
+
+test('스테이지를 누르면 퀴즈 화면으로 간다', async () => {
+  saveSave(makeSave());
+  renderAt('/category/science');
+  await userEvent.click(screen.getByRole('button', { name: /우리 몸/ }));
+  expect(screen.getByText('문제 1')).toBeInTheDocument();
+});
