@@ -5,6 +5,7 @@ import CategoryDetail from './screens/CategoryDetail';
 import Quiz from './screens/Quiz';
 import Result from './screens/Result';
 import WrongNotes from './screens/WrongNotes';
+import Badges from './screens/Badges';
 
 export default function App() {
   return (
@@ -15,6 +16,7 @@ export default function App() {
       <Route path="/quiz" element={<Quiz />} />
       <Route path="/result" element={<Result />} />
       <Route path="/wrong-notes" element={<WrongNotes />} />
+      <Route path="/badges" element={<Badges />} />
     </Routes>
   );
 }
