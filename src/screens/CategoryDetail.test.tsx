@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { GameProvider } from '../state/GameProvider';
@@ -6,6 +6,8 @@ import { saveSave } from '../storage/save';
 import { makeSave } from '../test/factories';
 import { stageKey } from '../types';
 import App from '../App';
+
+const questionBankState = vi.hoisted(() => ({ empty: false }));
 
 vi.mock('../data/questions', () => {
   const make = (i: number) => ({
@@ -27,8 +29,12 @@ vi.mock('../data/questions', () => {
     BANK: { science: questions },
     REGISTERED_CATEGORIES: ['science'],
     QUESTION_BY_ID: Object.fromEntries(questions.map((q) => [q.id, q])),
-    questionsOfStage: () => questions,
+    questionsOfStage: () => (questionBankState.empty ? [] : questions),
   };
+});
+
+afterEach(() => {
+  questionBankState.empty = false;
 });
 
 function renderAt(path: string) {
@@ -61,7 +67,8 @@ test('잠긴 단계를 누르면 해금 조건을 알려준다', async () => {
   saveSave(makeSave());
   renderAt('/category/science');
   await userEvent.click(screen.getByRole('button', { name: '중급' }));
-  expect(screen.getByText('입문 3스테이지를 모두 깨면 열립니다')).toBeInTheDocument();
+  const stage1Card = screen.getByRole('button', { name: /물질과 화학/ });
+  expect(within(stage1Card).getByText('입문 3스테이지를 모두 깨면 열립니다')).toBeInTheDocument();
 });
 
 test('클리어한 스테이지는 최고 기록을 보여준다', () => {
@@ -87,4 +94,29 @@ test('스테이지를 누르면 퀴즈 화면으로 간다', async () => {
   renderAt('/category/science');
   await userEvent.click(screen.getByRole('button', { name: /우리 몸/ }));
   expect(screen.getByText('문제 1')).toBeInTheDocument();
+});
+
+test('문제가 하나도 없어도 잠긴 단계를 누르면 해금 조건을 알려준다', async () => {
+  questionBankState.empty = true;
+  saveSave(makeSave());
+  renderAt('/category/science');
+  await userEvent.click(screen.getByRole('button', { name: '중급' }));
+  const stage1Card = screen.getByRole('button', { name: /물질과 화학/ });
+  expect(within(stage1Card).getByText('입문 3스테이지를 모두 깨면 열립니다')).toBeInTheDocument();
+});
+
+test('단계 전체가 잠겨 있으면 세 스테이지 모두 같은 해금 이유를 보여준다', async () => {
+  saveSave(makeSave());
+  renderAt('/category/science');
+  await userEvent.click(screen.getByRole('button', { name: '중급' }));
+  expect(screen.getAllByText('입문 3스테이지를 모두 깨면 열립니다')).toHaveLength(3);
+  expect(screen.queryByText('앞 스테이지를 깨면 열립니다')).not.toBeInTheDocument();
+});
+
+test('앞 스테이지만 안 깼을 때는 앞 스테이지를 깨라고 알려준다', () => {
+  saveSave(makeSave({
+    stages: { [stageKey('science', 'basic', 1)]: { cleared: true, bestCorrect: 5, plays: 1 } },
+  }));
+  renderAt('/category/science');
+  expect(screen.getByText('앞 스테이지를 깨면 열립니다')).toBeInTheDocument();
 });

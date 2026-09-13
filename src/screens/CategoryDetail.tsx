@@ -92,8 +92,11 @@ export default function CategoryDetail() {
           const title = category.stageTitles[tier][stage - 1];
 
           let status: string;
-          if (count === 0) status = '문제 준비 중';
-          else if (!open) status = stage === 1 ? tierUnlockHint(tier) : '앞 스테이지를 깨면 열립니다';
+          if (!open) {
+            status = isTierUnlocked(save, category.id, tier)
+              ? '앞 스테이지를 깨면 열립니다'
+              : tierUnlockHint(tier);
+          } else if (count === 0) status = '문제 준비 중';
           else if (cleared) status = `클리어 · 최고 ${record?.bestCorrect ?? 0}/5`;
           else status = `${count}문제 · 도전 가능`;
 
