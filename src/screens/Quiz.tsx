@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGame } from '../state/GameProvider';
 import {
@@ -17,14 +17,19 @@ export default function Quiz() {
   const { state, dispatch } = useGame();
   const navigate = useNavigate();
   const session = state.session;
+  // react-router는 내부적으로 navigate()를 startTransition으로 처리하므로,
+  // FINISH로 session을 비운 직후의 렌더는 아직 /quiz에 머문 채로 한 번 더 일어날 수 있다.
+  // 그 순간을 "세션 없이 들어옴"으로 오인해 홈으로 되돌리지 않도록 표시해 둔다.
+  const leavingRef = useRef(false);
 
   // 렌더 중에 dispatch하면 안 되므로 세션 종료 처리는 모두 effect에서 한다.
   useEffect(() => {
     if (!session) {
-      navigate('/', { replace: true });
+      if (!leavingRef.current) navigate('/', { replace: true });
       return;
     }
     if (isFinished(session)) {
+      leavingRef.current = true;
       dispatch({ type: 'FINISH', today: todayString() });
       navigate('/result', { replace: true });
     }

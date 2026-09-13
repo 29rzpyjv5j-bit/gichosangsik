@@ -102,3 +102,12 @@ test('아이템을 쓰고 나가려면 확인을 받는다', async () => {
   expect(screen.getByText('문제 1')).toBeInTheDocument();
   confirmSpy.mockRestore();
 });
+
+test('5문제를 다 풀면 결과 화면으로 간다', async () => {
+  await enterQuiz();
+  for (let i = 0; i < 5; i++) {
+    await userEvent.click(screen.getByRole('button', { name: '나' }));
+    await userEvent.click(screen.getByRole('button', { name: '계속' }));
+  }
+  expect(screen.getByText(/스테이지 클리어/)).toBeInTheDocument();
+});
