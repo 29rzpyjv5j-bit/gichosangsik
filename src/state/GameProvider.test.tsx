@@ -15,6 +15,9 @@ function Probe() {
       <button type="button" onClick={() => dispatch({ type: 'SET_THEME', theme: 'apricot' })}>
         살구빛 적용
       </button>
+      <button type="button" onClick={() => dispatch({ type: 'SET_THEME', theme: 'default' })}>
+        기본 테마
+      </button>
     </div>
   );
 }
@@ -44,6 +47,18 @@ test('테마를 적용하면 html에 data-theme이 붙는다', async () => {
   await userEvent.click(screen.getByText('살구빛 구매'));
   await userEvent.click(screen.getByText('살구빛 적용'));
   expect(document.documentElement.getAttribute('data-theme')).toBe('apricot');
+});
+
+test('기본 테마로 돌아가면 data-theme이 제거된다', async () => {
+  saveSave(makeSave({ wallet: 400_000 }));
+  render(<GameProvider><Probe /></GameProvider>);
+
+  await userEvent.click(screen.getByText('살구빛 구매'));
+  await userEvent.click(screen.getByText('살구빛 적용'));
+  expect(document.documentElement.getAttribute('data-theme')).toBe('apricot');
+
+  await userEvent.click(screen.getByText('기본 테마'));
+  expect(document.documentElement.hasAttribute('data-theme')).toBe(false);
 });
 
 test('Provider 밖에서 useGame을 쓰면 에러를 던진다', () => {
