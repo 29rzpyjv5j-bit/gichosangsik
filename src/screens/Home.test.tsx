@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { GameProvider } from '../state/GameProvider';
 import { saveSave } from '../storage/save';
@@ -73,4 +74,11 @@ test('기록이 없으면 이어서 하기가 첫 카테고리를 가리킨다',
   saveSave(makeSave());
   renderApp();
   expect(screen.getByText(/한국사부터 시작하기/)).toBeInTheDocument();
+});
+
+test('카테고리 칩을 누르면 카테고리 화면으로 간다', async () => {
+  saveSave(makeSave());
+  renderApp();
+  await userEvent.click(screen.getByRole('button', { name: /과학/ }));
+  expect(screen.getByRole('button', { name: '입문' })).toBeInTheDocument();
 });
