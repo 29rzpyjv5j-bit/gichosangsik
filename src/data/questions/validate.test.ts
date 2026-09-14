@@ -2,6 +2,15 @@ import { validateQuestions } from './validate';
 import { makeQuestion } from '../../test/factories';
 import type { Question, StageNo, Tier } from '../../types';
 
+// 정답 문자열 '100도'를 k번째 자리에 두고 나머지 보기를 순서대로 채운다.
+// 정답 위치만 옮기고 정답 자체는 그대로 유지하기 위한 도우미.
+function answerAt(k: number): Pick<Question, 'choices' | 'answerIndex'> {
+  const others = ['50도', '80도', '120도'];
+  const choices = [...others];
+  choices.splice(k, 0, '100도');
+  return { choices, answerIndex: k };
+}
+
 function fullBank(): Question[] {
   const out: Question[] = [];
   const tiers: [Tier, string][] = [['basic', 'b'], ['mid', 'm'], ['advanced', 'a']];
@@ -13,6 +22,8 @@ function fullBank(): Question[] {
         category: 'science',
         tier,
         stage,
+        // 정답 위치를 0→1→2→3 순으로 돌려 한쪽으로 쏠리지 않게 한다.
+        ...answerAt(out.length % 4),
       }));
     }
   }
@@ -148,4 +159,31 @@ test('집필 시점 형식을 검사한다', () => {
   const bank = fullBank();
   bank[0] = { ...bank[0], writtenAt: '2026년 9월' };
   expect(validateQuestions(bank, 'science').join(' ')).toContain('writtenAt');
+});
+
+test('4지선다 정답이 모두 첫 번째 보기에 몰려 있으면 잡아낸다', () => {
+  const bank = fullBank().map((q) => ({ ...q, ...answerAt(0) }));
+  const errors = validateQuestions(bank, 'science').join(' ');
+  expect(errors).toContain('science 정답 위치 1번');
+  expect(errors).toContain('45개');
+  expect(errors).toContain('허용 7~15개');
+  // 비어 있는 자리도 너무 적다고 각각 잡아낸다.
+  expect(errors).toContain('science 정답 위치 4번');
+});
+
+test('정답 위치가 고르게 퍼져 있으면 쏠림으로 잡지 않는다', () => {
+  const bank = fullBank();
+  const counts = [0, 0, 0, 0];
+  for (const q of bank) counts[q.answerIndex]++;
+  expect(counts).toEqual([12, 11, 11, 11]);
+  expect(validateQuestions(bank, 'science').join(' ')).not.toContain('정답 위치');
+});
+
+test('정답 위치 쏠림은 OX 문제를 세지 않는다', () => {
+  // 앞 36문제는 4지선다로 위치별 9개씩, 뒤 9문제는 OX 정답 O(0번).
+  // OX까지 세면 0번 자리가 18/45 = 40%라 걸리지만, 4지선다만 세면 고르다.
+  const bank = fullBank().map((q, i) =>
+    i < 36 ? q : { ...q, type: 'ox' as const, choices: ['O', 'X'], answerIndex: 0 },
+  );
+  expect(validateQuestions(bank, 'science').join(' ')).not.toContain('정답 위치');
 });

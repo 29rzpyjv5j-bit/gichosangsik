@@ -60,5 +60,23 @@ export function validateQuestions(questions: Question[], category: CategoryId): 
     }
   }
 
+  // 보기는 섞지 않고 저장 순서대로 보여 주므로, 정답이 한 자리에 몰리면
+  // "늘 첫 번째를 누르기" 같은 요령이 통한다. 4지선다만 모아 자리마다
+  // 15% 이상 35% 이하가 되도록 한다. 소수 오차를 피하려 정수로 비교한다.
+  const choiceAnswers = questions.filter((q) => q.type === 'choice').map((q) => q.answerIndex);
+  const total = choiceAnswers.length;
+  if (total > 0) {
+    const min = Math.ceil((15 * total) / 100);
+    const max = Math.floor((35 * total) / 100);
+    for (let pos = 0; pos < 4; pos++) {
+      const n = choiceAnswers.filter((i) => i === pos).length;
+      if (n * 100 < 15 * total || n * 100 > 35 * total) {
+        errors.push(
+          `${category} 정답 위치 ${pos + 1}번 쏠림: ${n}개 (4지선다 ${total}문제 중 허용 ${min}~${max}개)`,
+        );
+      }
+    }
+  }
+
   return errors;
 }
