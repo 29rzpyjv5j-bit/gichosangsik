@@ -1,10 +1,12 @@
 import type { CategoryId, Question, StageNo, Tier } from '../../types';
 
 import { koreanHistory } from './korean-history';
+import { science } from './science';
 
 // 문제 파일을 집필할 때마다 아래에 등록한다.
 export const BANK: Partial<Record<CategoryId, Question[]>> = {
   'korean-history': koreanHistory,
+  science,
 };
 
 export const REGISTERED_CATEGORIES = Object.keys(BANK) as CategoryId[];
