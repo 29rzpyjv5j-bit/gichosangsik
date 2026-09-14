@@ -1,26 +1,97 @@
+import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGame } from '../state/GameProvider';
 import { getLevel } from '../domain/level';
 import { clearedCount, nextStageAnywhere } from '../domain/unlock';
+import { growthStageOf, nextGrowthStage } from '../domain/growth';
 import {
   isDailyBonusEligible, mulberry32, pickDailyQuestions, todayString, unlockedQuestions,
 } from '../domain/dailyGame';
 import { ALL_QUESTIONS } from '../data/questions';
 import { CATEGORIES, CATEGORY_BY_ID } from '../data/categories';
 import { LEVELS } from '../data/levels';
-import { AVATARS } from '../data/shop';
 import { TIER_NAMES } from '../types';
 import { formatMoney } from '../components/Money';
-import { ThickButton } from '../components/ThickButton';
 import { ProgressBar } from '../components/ProgressBar';
+import { Penguin } from '../components/Penguin';
 
-const cardStyle = {
+const card = {
   border: '2px solid var(--border)',
   borderBottomWidth: 4,
-  borderRadius: 16,
+  borderRadius: 18,
   background: 'var(--surface)',
   color: 'var(--text)',
 } as const;
+
+const pill = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 6,
+  background: 'var(--surface)',
+  border: '2px solid var(--border)',
+  borderRadius: 99,
+  padding: '5px 12px 5px 6px',
+  fontWeight: 900,
+  fontSize: 14,
+} as const;
+
+function QuestRow({
+  icon, iconBg, title, sub, done, disabled, onClick,
+}: {
+  icon: string;
+  iconBg: string;
+  title: ReactNode;
+  sub: ReactNode;
+  done?: boolean;
+  disabled?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      style={{
+        ...card,
+        width: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12,
+        padding: 12,
+        textAlign: 'left',
+        opacity: disabled ? 0.55 : 1,
+      }}
+    >
+      <span
+        aria-hidden
+        style={{
+          width: 46, height: 46, borderRadius: 14, flex: '0 0 auto',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 24, background: iconBg,
+        }}
+      >
+        {icon}
+      </span>
+      <span style={{ flex: 1, minWidth: 0 }}>
+        <span style={{ display: 'block', fontSize: 15, fontWeight: 900 }}>{title}</span>
+        <span className="muted" style={{ display: 'block', fontSize: 11, marginTop: 2 }}>{sub}</span>
+      </span>
+      <span
+        aria-hidden
+        style={{
+          width: 30, height: 30, borderRadius: '50%', flex: '0 0 auto',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 14, fontWeight: 900,
+          background: done ? 'var(--accent)' : 'var(--bg)',
+          color: done ? '#fff' : 'var(--muted)',
+          border: done ? 'none' : '2px solid var(--border)',
+        }}
+      >
+        {done ? '✓' : '›'}
+      </span>
+    </button>
+  );
+}
 
 export default function Home() {
   const { state, dispatch } = useGame();
@@ -28,10 +99,11 @@ export default function Home() {
   const save = state.save;
   const level = getLevel(save.totalPrize);
   const levelFloor = LEVELS[level.level - 1].threshold;
+  const growth = growthStageOf(level.level);
+  const nextGrowth = nextGrowthStage(level.level);
   const today = todayString();
   const pool = unlockedQuestions(save, ALL_QUESTIONS);
   const bonusLeft = isDailyBonusEligible(save, today);
-  const avatar = AVATARS.find((a) => a.id === save.settings.avatar)?.emoji ?? '🙂';
   const resume = nextStageAnywhere(save, save.lastPlayed?.category ?? null);
 
   function startDaily() {
@@ -41,93 +113,123 @@ export default function Home() {
     navigate('/quiz');
   }
 
-  function startResume() {
-    if (!resume) return;
-    navigate(`/category/${resume.category}`);
-  }
-
   return (
     <div className="screen">
-      {/* 프로필 카드 */}
-      <button
-        type="button"
-        aria-label="프로필·설정"
-        onClick={() => navigate('/profile')}
-        style={{ ...cardStyle, width: '100%', padding: 16, marginBottom: 14, textAlign: 'left' }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+      {/* 상단 재화 */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
+        <button type="button" onClick={() => navigate('/profile')} style={{ ...pill, cursor: 'pointer' }}>
           <span
-            aria-hidden
             style={{
-              width: 56, height: 56, borderRadius: '50%', flex: '0 0 auto',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 34, background: 'var(--ok-bg)',
+              background: 'var(--accent)', color: '#fff', borderRadius: 99,
+              padding: '2px 8px', fontSize: 12,
             }}
           >
-            {avatar}
+            Lv.{level.level}
           </span>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 13, fontWeight: 900, color: 'var(--accent)' }}>
-              Lv.{level.level}
-            </div>
-            <div style={{ fontSize: 19, fontWeight: 900, marginBottom: 6 }}>{level.title}</div>
-            <ProgressBar
-              value={save.totalPrize - levelFloor}
-              max={level.nextThreshold === null ? 1 : level.nextThreshold - levelFloor}
-            />
-            <div className="muted" style={{ fontSize: 11, marginTop: 4 }}>
-              {level.remaining === null
-                ? '최고 레벨이에요'
-                : `다음 레벨까지 ${formatMoney(level.remaining)}`}
-            </div>
-          </div>
-          <span aria-hidden className="muted" style={{ fontSize: 22 }}>›</span>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 14 }}>
-          <div style={{ background: 'var(--bg)', borderRadius: 10, padding: '8px 10px' }}>
-            <div className="muted" style={{ fontSize: 11 }}>누적 상금</div>
-            <div style={{ fontSize: 16, fontWeight: 900 }}>
-              <span>{formatMoney(save.totalPrize)}</span>
-            </div>
-          </div>
-          <div style={{ background: 'var(--bg)', borderRadius: 10, padding: '8px 10px' }}>
-            <div className="muted" style={{ fontSize: 11 }}>지갑</div>
-            <div style={{ fontSize: 16, fontWeight: 900, color: 'var(--accent)' }}>
-              <span>{formatMoney(save.wallet)}</span>
-            </div>
-          </div>
-        </div>
-      </button>
+          {growth.name}
+        </button>
+        <span style={pill}>
+          <span aria-hidden style={{ fontSize: 18 }}>🪙</span>
+          <span>{formatMoney(save.wallet)}</span>
+        </span>
+      </div>
 
-      {/* 오늘의 볼게임 */}
-      <div style={{ marginBottom: 12 }}>
-        <ThickButton accent onClick={startDaily} disabled={pool.length === 0}>
+      {/* 캐릭터 무대 */}
+      <div
+        style={{
+          position: 'relative',
+          borderRadius: 26,
+          overflow: 'hidden',
+          background: 'linear-gradient(180deg, #cdeeff 0%, #eaf7ff 62%, #c8ecb4 62%, #b3e29a 100%)',
+          padding: '18px 16px 14px',
+          marginBottom: 12,
+          textAlign: 'center',
+        }}
+      >
+        <div
+          style={{
+            position: 'relative',
+            display: 'inline-block',
+            background: '#fff',
+            borderRadius: 16,
+            padding: '8px 14px',
+            fontSize: 13,
+            fontWeight: 800,
+            color: '#2b3a55',
+            boxShadow: '0 3px 0 rgba(0,0,0,0.06)',
+          }}
+        >
           {pool.length === 0
-            ? '문제 준비 중'
+            ? '문제가 곧 도착해요!'
             : bonusLeft
-              ? '오늘의 볼게임 시작 ▶'
-              : '한 판 더 ▶'}
-        </ThickButton>
-        <p className="muted" style={{ fontSize: 11, margin: '6px 2px 0' }}>
-          {bonusLeft
-            ? '여러 카테고리를 섞은 5문제 · 완료하면 보너스 30,000원'
-            : '오늘 보너스는 받았어요. 문제 상금은 그대로 받습니다'}
-        </p>
+              ? '오늘의 퀴즈 풀러 가요!'
+              : '오늘도 잘했어요. 한 판 더?'}
+        </div>
+        <div className="bob" style={{ margin: '6px auto 0', width: 150 }}>
+          <Penguin stage={growth.index} size={150} />
+        </div>
+        <div style={{ fontSize: 13, fontWeight: 800, color: '#2b5a2a' }}>{level.title}</div>
       </div>
 
-      <div style={{ marginBottom: 20 }}>
-        <ThickButton onClick={startResume}>
-          {resume
-            ? resume.category === save.lastPlayed?.category
-              ? `이어서 하기 · ${CATEGORY_BY_ID[resume.category].name} ${TIER_NAMES[resume.tier]} ${resume.stage}`
-              : `${CATEGORY_BY_ID[resume.category].name}부터 시작하기`
-            : '모든 스테이지를 깼어요'}
-        </ThickButton>
+      {/* 성장 게이지 */}
+      <div style={{ ...card, padding: 14, marginBottom: 18 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
+          <b style={{ fontSize: 14 }}>성장 게이지</b>
+          <span className="muted" style={{ fontSize: 11 }}>
+            누적 <span style={{ fontWeight: 900, color: 'var(--text)' }}>{formatMoney(save.totalPrize)}</span>
+          </span>
+        </div>
+        <ProgressBar
+          value={save.totalPrize - levelFloor}
+          max={level.nextThreshold === null ? 1 : level.nextThreshold - levelFloor}
+        />
+        <div className="muted" style={{ fontSize: 11, marginTop: 6 }}>
+          {level.remaining === null
+            ? '최고 레벨이에요!'
+            : `다음 레벨까지 ${formatMoney(level.remaining)}`}
+          {nextGrowth && ` · 레벨 ${nextGrowth.fromLevel}이 되면 ${nextGrowth.name}(으)로 자라요`}
+        </div>
       </div>
 
-      {/* 카테고리 그리드 */}
-      <h2 style={{ fontSize: 17, margin: '0 2px 10px' }}>카테고리</h2>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 20 }}>
+      {/* 오늘의 퀘스트 */}
+      <h2 style={{ fontSize: 17, margin: '0 2px 10px' }}>오늘의 퀘스트</h2>
+      <div style={{ display: 'grid', gap: 8, marginBottom: 20 }}>
+        <QuestRow
+          icon="🎯"
+          iconBg="#fff1c7"
+          title={pool.length === 0 ? '문제 준비 중' : bonusLeft ? '오늘의 볼게임 시작 ▶' : '한 판 더 ▶'}
+          sub={bonusLeft ? '여러 카테고리 5문제 · 완료 보너스 30,000원' : '오늘 보너스는 받았어요 · 문제 상금은 그대로'}
+          done={!bonusLeft}
+          disabled={pool.length === 0}
+          onClick={startDaily}
+        />
+        <QuestRow
+          icon="🗺️"
+          iconBg="#dff3d4"
+          title={
+            resume
+              ? resume.category === save.lastPlayed?.category
+                ? `이어서 하기 · ${CATEGORY_BY_ID[resume.category].name} ${TIER_NAMES[resume.tier]} ${resume.stage}`
+                : `${CATEGORY_BY_ID[resume.category].name}부터 시작하기`
+              : '모든 스테이지를 깼어요'
+          }
+          sub="다음 스테이지로 모험을 이어가요"
+          disabled={!resume}
+          onClick={() => resume && navigate(`/category/${resume.category}`)}
+        />
+        <QuestRow
+          icon="📕"
+          iconBg="#ffe3e0"
+          title={`오답노트 복습 · ${save.wrongNotes.length}문제`}
+          sub="틀린 문제를 다시 맞히면 5,000원"
+          done={save.wrongNotes.length === 0}
+          onClick={() => navigate('/wrong-notes')}
+        />
+      </div>
+
+      {/* 카테고리 */}
+      <h2 style={{ fontSize: 17, margin: '0 2px 10px' }}>탐험할 카테고리</h2>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
         {CATEGORIES.map((c) => {
           const done = clearedCount(save, c.id);
           return (
@@ -135,7 +237,7 @@ export default function Home() {
               key={c.id}
               type="button"
               onClick={() => navigate(`/category/${c.id}`)}
-              style={{ ...cardStyle, padding: '14px 12px', textAlign: 'left' }}
+              style={{ ...card, padding: '14px 12px', textAlign: 'left' }}
             >
               <div aria-hidden style={{ fontSize: 30, lineHeight: 1, marginBottom: 8 }}>{c.emoji}</div>
               <div style={{ fontSize: 16, fontWeight: 900, marginBottom: 8 }}>{c.name}</div>
@@ -144,25 +246,6 @@ export default function Home() {
             </button>
           );
         })}
-      </div>
-
-      {/* 뱃지·오답노트·상점 */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
-        {[
-          { to: '/badges', emoji: '🏅', label: `뱃지 ${save.badges.length}개` },
-          { to: '/wrong-notes', emoji: '📕', label: `오답노트 ${save.wrongNotes.length}문제` },
-          { to: '/shop', emoji: '🛍️', label: '상점' },
-        ].map((item) => (
-          <button
-            key={item.to}
-            type="button"
-            onClick={() => navigate(item.to)}
-            style={{ ...cardStyle, padding: '12px 4px', textAlign: 'center' }}
-          >
-            <div aria-hidden style={{ fontSize: 24 }}>{item.emoji}</div>
-            <div style={{ fontSize: 12, fontWeight: 800, marginTop: 4 }}>{item.label}</div>
-          </button>
-        ))}
       </div>
 
       {state.storageWarning !== 'none' && (

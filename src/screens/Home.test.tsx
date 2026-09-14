@@ -61,14 +61,13 @@ test('오늘 보너스를 이미 받았으면 한 판 더로 바뀐다', () => {
   expect(screen.getByRole('button', { name: /한 판 더/ })).toBeInTheDocument();
 });
 
-test('오답노트와 뱃지 개수가 보인다', () => {
+test('오답노트 복습 퀘스트에 남은 문제 수가 보인다', () => {
   saveSave(makeSave({
     wrongNotes: ['sc-b-01', 'sc-b-02'],
     badges: [{ id: 'perfect-1', earnedAt: '2026-09-13' }],
   }));
   renderApp();
-  expect(screen.getByText(/오답노트/)).toHaveTextContent('2문제');
-  expect(screen.getByText(/뱃지/)).toHaveTextContent('1개');
+  expect(screen.getByRole('button', { name: /오답노트 복습/ })).toHaveTextContent('2문제');
 });
 
 test('기록이 없으면 이어서 하기가 첫 카테고리를 가리킨다', () => {

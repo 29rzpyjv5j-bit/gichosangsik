@@ -6,6 +6,8 @@ import { clearedCount } from '../domain/unlock';
 import { CATEGORIES } from '../data/categories';
 import { AVATARS, THEMES } from '../data/shop';
 import { formatMoney } from '../components/Money';
+import { Penguin } from '../components/Penguin';
+import { GROWTH_STAGES, growthStageOf } from '../domain/growth';
 
 export default function Profile() {
   const { state, dispatch } = useGame();
@@ -49,6 +51,34 @@ export default function Profile() {
       <p className="muted" style={{ fontSize: 12, margin: '0 0 18px' }}>
         총 {plays}판 · 만점 {save.perfectCount}회 · 볼게임 {save.dailyGame.completed}회
       </p>
+
+      <h3 style={{ fontSize: 14, margin: '0 0 8px' }}>펭귄 성장 단계</h3>
+      <div
+        style={{
+          display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 4, marginBottom: 22,
+          background: 'linear-gradient(180deg, #eaf7ff, #dff3d4)', borderRadius: 18, padding: '10px 4px',
+        }}
+      >
+        {GROWTH_STAGES.map((g) => {
+          const reached = level.level >= g.fromLevel;
+          const isNow = growthStageOf(level.level).index === g.index;
+          return (
+            <div key={g.index} style={{ textAlign: 'center', opacity: reached ? 1 : 0.35 }}>
+              <div
+                style={{
+                  borderRadius: 14, padding: '4px 0',
+                  background: isNow ? '#fff' : 'transparent',
+                  filter: reached ? 'none' : 'grayscale(1)',
+                }}
+              >
+                <Penguin stage={g.index} size={52} />
+              </div>
+              <div style={{ fontSize: 10, fontWeight: 900, marginTop: 2 }}>{reached ? g.name : '???'}</div>
+              <div className="muted" style={{ fontSize: 9 }}>레벨 {g.fromLevel}</div>
+            </div>
+          );
+        })}
+      </div>
 
       <h3 style={{ fontSize: 14, margin: '0 0 8px' }}>카테고리별 정답률</h3>
       <div style={{ display: 'grid', gap: 6, marginBottom: 22 }}>

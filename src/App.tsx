@@ -1,4 +1,5 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useLocation } from 'react-router-dom';
+import { TabBar } from './components/TabBar';
 import Home from './screens/Home';
 import Categories from './screens/Categories';
 import CategoryDetail from './screens/CategoryDetail';
@@ -10,7 +11,10 @@ import Shop from './screens/Shop';
 import Profile from './screens/Profile';
 
 export default function App() {
+  const { pathname } = useLocation();
+  const showTabs = pathname !== '/quiz' && pathname !== '/result';
   return (
+    <>
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/categories" element={<Categories />} />
@@ -22,5 +26,7 @@ export default function App() {
       <Route path="/shop" element={<Shop />} />
       <Route path="/profile" element={<Profile />} />
     </Routes>
+    {showTabs && <TabBar />}
+    </>
   );
 }
