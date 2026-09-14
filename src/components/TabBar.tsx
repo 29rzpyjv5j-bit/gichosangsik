@@ -27,7 +27,7 @@ export function TabBar() {
       <div
         className="puffy"
         style={{
-          pointerEvents: 'auto', width: '100%', maxWidth: 460, margin: '0 10px 10px',
+          pointerEvents: 'auto', width: '100%', maxWidth: 460, margin: '0 10px calc(22px + env(safe-area-inset-bottom, 0px))',
           display: 'grid', gridTemplateColumns: `repeat(${TABS.length}, 1fr)`,
           padding: '7px 4px', borderRadius: 28,
         }}

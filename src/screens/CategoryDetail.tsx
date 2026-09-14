@@ -236,7 +236,7 @@ export default function CategoryDetail() {
       <div
         className="puffy"
         style={{
-          position: 'sticky', bottom: 96, marginTop: 12, padding: '12px 14px', borderRadius: 24,
+          position: 'sticky', bottom: 'calc(108px + env(safe-area-inset-bottom, 0px))', marginTop: 12, padding: '12px 14px', borderRadius: 24,
           display: 'flex', alignItems: 'center', gap: 10,
         }}
       >
