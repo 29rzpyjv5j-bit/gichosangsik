@@ -6,26 +6,33 @@ import { saveSave } from '../storage/save';
 import { makeSave } from '../test/factories';
 import App from '../App';
 
+// questionsOfStage는 category/tier/stage 인자에 따라 실제로 다른 문제를 돌려줘야 한다.
+// 인자를 무시하고 항상 같은 문제를 돌려주는 목은 "다음 스테이지"가 엉뚱한 스테이지로
+// 가는 버그를 가려버리므로, 스테이지별로 구별되는 문제 세트를 만든다.
 vi.mock('../data/questions', () => {
-  const questions = [1, 2, 3, 4, 5].map((i) => ({
-    id: `sc-b-0${i}`,
+  const makeStage = (stage: 1 | 2) => [1, 2, 3, 4, 5].map((i) => ({
+    id: `sc-b-${stage}${i}`,
     category: 'science',
     tier: 'basic',
-    stage: 1,
+    stage,
     type: 'choice',
-    prompt: `문제 ${i}`,
+    prompt: `${stage}스테이지 문제 ${i}`,
     choices: ['가', '나', '다', '라'],
     answerIndex: 1,
     hint: `힌트 ${i}`,
     explanation: `해설 ${i}`,
     writtenAt: '2026-09',
   }));
+  const stage1 = makeStage(1);
+  const stage2 = makeStage(2);
+  const all = [...stage1, ...stage2];
   return {
-    ALL_QUESTIONS: questions,
-    BANK: { science: questions },
+    ALL_QUESTIONS: all,
+    BANK: { science: all },
     REGISTERED_CATEGORIES: ['science'],
-    QUESTION_BY_ID: Object.fromEntries(questions.map((q) => [q.id, q])),
-    questionsOfStage: () => questions,
+    QUESTION_BY_ID: Object.fromEntries(all.map((q) => [q.id, q])),
+    questionsOfStage: (category: string, tier: string, stage: number) =>
+      all.filter((q) => q.category === category && q.tier === tier && q.stage === stage),
   };
 });
 
@@ -85,6 +92,20 @@ test('나가기를 누르면 홈으로 간다', async () => {
   await playPerfect();
   await userEvent.click(screen.getByRole('button', { name: '나가기' }));
   expect(screen.getByRole('button', { name: /오늘의 볼게임 시작|한 판 더/ })).toBeInTheDocument();
+});
+
+test('다음 스테이지를 누르면 다음 스테이지의 퀴즈로 이동한다', async () => {
+  await playPerfect();
+  await userEvent.click(screen.getByRole('button', { name: '다음 스테이지' }));
+  expect(screen.getByText('과학 · 입문 2')).toBeInTheDocument();
+  expect(screen.getByText('2스테이지 문제 1')).toBeInTheDocument();
+});
+
+test('다시 하기를 누르면 같은 스테이지의 퀴즈로 이동한다', async () => {
+  await playPerfect();
+  await userEvent.click(screen.getByRole('button', { name: '다시 하기' }));
+  expect(screen.getByText('과학 · 입문 1')).toBeInTheDocument();
+  expect(screen.getByText('1스테이지 문제 1')).toBeInTheDocument();
 });
 
 test('결과 없이 직접 들어오면 홈으로 돌려보낸다', () => {

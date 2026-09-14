@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGame } from '../state/GameProvider';
 import { BADGE_BY_ID } from '../data/badges';
@@ -15,9 +15,14 @@ export default function Result() {
   const navigate = useNavigate();
   const result = state.lastResult;
   const [levelUpOpen, setLevelUpOpen] = useState(true);
+  // react-router는 내부적으로 navigate()를 startTransition으로 처리하므로,
+  // START_STAGE/CLEAR_RESULT로 lastResult를 비운 직후의 렌더는 아직 /result에
+  // 머문 채로 한 번 더 일어날 수 있다. 그 순간을 "결과 없이 들어옴"으로 오인해
+  // 홈으로 되돌리지 않도록 표시해 둔다. (Quiz.tsx의 leavingRef와 같은 패턴)
+  const leavingRef = useRef(false);
 
   useEffect(() => {
-    if (!result) navigate('/', { replace: true });
+    if (!result && !leavingRef.current) navigate('/', { replace: true });
   }, [result, navigate]);
 
   if (!result) return null;
@@ -37,6 +42,7 @@ export default function Result() {
 
   function retry() {
     if (!stage) return;
+    leavingRef.current = true;
     const questions = questionsOfStage(stage.category, stage.tier, stage.stage);
     dispatch({
       type: 'START_STAGE',
@@ -50,6 +56,7 @@ export default function Result() {
 
   function goNext() {
     if (!stage || !result || !result.next) return;
+    leavingRef.current = true;
     const questions = questionsOfStage(stage.category, result.next.tier, result.next.stage);
     dispatch({
       type: 'START_STAGE',
@@ -62,6 +69,7 @@ export default function Result() {
   }
 
   function leave() {
+    leavingRef.current = true;
     dispatch({ type: 'CLEAR_RESULT' });
     navigate('/', { replace: true });
   }
