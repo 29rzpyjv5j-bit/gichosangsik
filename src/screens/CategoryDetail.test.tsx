@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { GameProvider } from '../state/GameProvider';
@@ -45,38 +45,48 @@ function renderAt(path: string) {
   );
 }
 
-test('단계 탭과 스테이지 3개가 보인다', () => {
+test('9단계 노드가 모두 보인다', () => {
   saveSave(makeSave());
   renderAt('/category/science');
-  expect(screen.getByRole('button', { name: '입문' })).toBeInTheDocument();
-  expect(screen.getByRole('button', { name: '중급' })).toBeInTheDocument();
-  expect(screen.getByRole('button', { name: '상급' })).toBeInTheDocument();
-  expect(screen.getByText('우리 몸')).toBeInTheDocument();
-  expect(screen.getByText('동물과 식물')).toBeInTheDocument();
-  expect(screen.getByText('날씨와 지구')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: '1단계 우리 몸' })).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: /^4단계 물질과 화학/ })).toBeInTheDocument();
+  expect(screen.getAllByRole('button', { name: /^\d단계 / })).toHaveLength(9);
 });
 
-test('처음에는 1스테이지만 도전할 수 있다', () => {
+test('처음에는 1단계만 도전할 수 있다', async () => {
   saveSave(makeSave());
   renderAt('/category/science');
-  expect(screen.getByRole('button', { name: /우리 몸/ })).toBeEnabled();
-  expect(screen.getByRole('button', { name: /동물과 식물/ })).toBeDisabled();
+  expect(screen.getByText('5문제 · 도전 가능')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: '도전' })).toBeEnabled();
+  await userEvent.click(screen.getByRole('button', { name: /^2단계/ }));
+  expect(screen.getByText('앞 스테이지를 깨면 열립니다')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: '도전' })).toBeDisabled();
 });
 
 test('잠긴 단계를 누르면 해금 조건을 알려준다', async () => {
   saveSave(makeSave());
   renderAt('/category/science');
-  await userEvent.click(screen.getByRole('button', { name: '중급' }));
-  const stage1Card = screen.getByRole('button', { name: /물질과 화학/ });
-  expect(within(stage1Card).getByText('입문 3스테이지를 모두 깨면 열립니다')).toBeInTheDocument();
+  await userEvent.click(screen.getByRole('button', { name: /^4단계/ }));
+  expect(screen.getByText('입문 3스테이지를 모두 깨면 열립니다')).toBeInTheDocument();
 });
 
-test('클리어한 스테이지는 최고 기록을 보여준다', () => {
+test('문제가 하나도 없어도 잠긴 단계는 해금 조건을 알려준다', async () => {
+  questionBankState.empty = true;
+  saveSave(makeSave());
+  renderAt('/category/science');
+  expect(screen.getByText('문제 준비 중')).toBeInTheDocument();
+  await userEvent.click(screen.getByRole('button', { name: /^4단계/ }));
+  expect(screen.getByText('입문 3스테이지를 모두 깨면 열립니다')).toBeInTheDocument();
+});
+
+test('클리어한 단계는 최고 기록과 다시 도전을 보여준다', async () => {
   saveSave(makeSave({
     stages: { [stageKey('science', 'basic', 1)]: { cleared: true, bestCorrect: 4, plays: 2 } },
   }));
   renderAt('/category/science');
+  await userEvent.click(screen.getByRole('button', { name: /^1단계/ }));
   expect(screen.getByText(/최고 4\/5/)).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: '다시 도전' })).toBeEnabled();
 });
 
 test('카테고리 목록에 7개와 진행률이 보인다', () => {
@@ -89,34 +99,9 @@ test('카테고리 목록에 7개와 진행률이 보인다', () => {
   expect(screen.getByText('1/9')).toBeInTheDocument();
 });
 
-test('스테이지를 누르면 퀴즈 화면으로 간다', async () => {
+test('도전을 누르면 퀴즈 화면으로 간다', async () => {
   saveSave(makeSave());
   renderAt('/category/science');
-  await userEvent.click(screen.getByRole('button', { name: /우리 몸/ }));
+  await userEvent.click(screen.getByRole('button', { name: '도전' }));
   expect(screen.getByText('문제 1')).toBeInTheDocument();
-});
-
-test('문제가 하나도 없어도 잠긴 단계를 누르면 해금 조건을 알려준다', async () => {
-  questionBankState.empty = true;
-  saveSave(makeSave());
-  renderAt('/category/science');
-  await userEvent.click(screen.getByRole('button', { name: '중급' }));
-  const stage1Card = screen.getByRole('button', { name: /물질과 화학/ });
-  expect(within(stage1Card).getByText('입문 3스테이지를 모두 깨면 열립니다')).toBeInTheDocument();
-});
-
-test('단계 전체가 잠겨 있으면 세 스테이지 모두 같은 해금 이유를 보여준다', async () => {
-  saveSave(makeSave());
-  renderAt('/category/science');
-  await userEvent.click(screen.getByRole('button', { name: '중급' }));
-  expect(screen.getAllByText('입문 3스테이지를 모두 깨면 열립니다')).toHaveLength(3);
-  expect(screen.queryByText('앞 스테이지를 깨면 열립니다')).not.toBeInTheDocument();
-});
-
-test('앞 스테이지만 안 깼을 때는 앞 스테이지를 깨라고 알려준다', () => {
-  saveSave(makeSave({
-    stages: { [stageKey('science', 'basic', 1)]: { cleared: true, bestCorrect: 5, plays: 1 } },
-  }));
-  renderAt('/category/science');
-  expect(screen.getByText('앞 스테이지를 깨면 열립니다')).toBeInTheDocument();
 });

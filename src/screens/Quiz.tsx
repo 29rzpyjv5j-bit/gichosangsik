@@ -2,12 +2,16 @@ import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGame } from '../state/GameProvider';
 import {
-  currentQuestion, canUseItem, isFinished, ITEM_EMOJI, ITEM_LABEL, ITEM_PRICE,
+  currentQuestion, canUseItem, isFinished, ITEM_LABEL, ITEM_PRICE,
 } from '../domain/quizSession';
 import type { ItemId } from '../domain/quizSession';
+import type { IconName } from '../components/Icons';
+
+const ITEM_ICON: Record<ItemId, IconName> = { half: 'scissors', hint: 'bulb', pass: 'skip' };
 import { todayString } from '../domain/dailyGame';
 import { CATEGORY_BY_ID } from '../data/categories';
 import { TIER_NAMES } from '../types';
+import { Icon } from '../components/Icons';
 import { formatMoney } from '../components/Money';
 import { ProgressBar } from '../components/ProgressBar';
 
@@ -47,7 +51,7 @@ export default function Quiz() {
     session.mode.kind === 'stage'
       ? `${CATEGORY_BY_ID[session.mode.category].name} · ${TIER_NAMES[session.mode.tier]} ${session.mode.stage}`
       : session.mode.kind === 'daily'
-        ? '오늘의 볼게임'
+        ? '섞어 풀기'
         : '오답노트 복습';
 
   function exit() {
@@ -106,7 +110,7 @@ export default function Quiz() {
             padding: '10px 12px', fontSize: 13, lineHeight: 1.5, margin: '0 0 14px',
           }}
         >
-          <span aria-hidden="true">💡 </span>
+          <Icon name="bulb" size={20} style={{ verticalAlign: -4, marginRight: 4 }} />
           {q.hint}
         </p>
       )}
@@ -162,7 +166,7 @@ export default function Quiz() {
                 onClick={() => dispatch({ type: 'USE_ITEM', item })}
                 style={{ textAlign: 'center', padding: '8px 4px', fontSize: 11 }}
               >
-                <span style={{ display: 'block', fontSize: 16 }}>{ITEM_EMOJI[item]}</span>
+                <Icon name={ITEM_ICON[item]} size={24} style={{ display: 'block', margin: '0 auto' }} />
                 {alreadyUsed ? '사용됨' : ITEM_LABEL[item]}
                 <span className="muted" style={{ display: 'block', fontSize: 9 }}>
                   {alreadyUsed ? '' : formatMoney(ITEM_PRICE[item])}

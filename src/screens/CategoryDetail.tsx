@@ -4,222 +4,266 @@ import { useGame } from '../state/GameProvider';
 import { CATEGORY_BY_ID } from '../data/categories';
 import { questionsOfStage } from '../data/questions';
 import {
-  clearedCount, isStageCleared, isStageUnlocked, isTierUnlocked, tierUnlockHint,
+  clearedCount, isStageCleared, isStageUnlocked, isTierUnlocked, nextStage, tierUnlockHint,
 } from '../domain/unlock';
+import { growthStageOf } from '../domain/growth';
+import { getLevel } from '../domain/level';
 import { TIERS, TIER_NAMES, stageKey } from '../types';
 import type { CategoryId, StageNo, Tier } from '../types';
+import { formatMoney } from '../components/Money';
+import { ProgressBar } from '../components/ProgressBar';
+import { Penguin } from '../components/Penguin';
+import { Icon, Landmark } from '../components/Icons';
 
 const STAGES: StageNo[] = [1, 2, 3];
+const MAP_HEIGHT = 700;
+
+// 아래(1단계)에서 위(9단계)로 올라가는 노드 위치: x는 %, y는 px
+const NODE_POS: [number, number][] = [
+  [24, 620], [70, 566], [30, 494],
+  [68, 380], [26, 322], [70, 262],
+  [30, 150], [66, 100], [42, 34],
+];
+const CHEST_POS: [number, number][] = [[50, 436], [48, 208]];
+const ZONES: { tier: Tier; icon: 'sprout' | 'tree' | 'mount'; label: string; top: number; side: 'left' | 'right' }[] = [
+  { tier: 'basic', icon: 'sprout', label: '입문 들판', top: 660, side: 'right' },
+  { tier: 'mid', icon: 'tree', label: '중급 숲', top: 430, side: 'right' },
+  { tier: 'advanced', icon: 'mount', label: '상급 설산', top: 206, side: 'left' },
+];
+
+// 노드들을 부드럽게 잇는 길 (Catmull-Rom → 베지어)
+function pathThrough(points: [number, number][]): string {
+  const p = points.map(([x, y]) => [x * 3.3, y] as [number, number]);
+  let d = `M${p[0][0]} ${p[0][1]}`;
+  for (let i = 0; i < p.length - 1; i++) {
+    const p0 = p[i - 1] ?? p[i];
+    const p1 = p[i];
+    const p2 = p[i + 1];
+    const p3 = p[i + 2] ?? p2;
+    const c1 = [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6];
+    const c2 = [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6];
+    d += ` C${c1[0]} ${c1[1]} ${c2[0]} ${c2[1]} ${p2[0]} ${p2[1]}`;
+  }
+  return d;
+}
 
 export default function CategoryDetail() {
   const { categoryId } = useParams();
   const { state, dispatch } = useGame();
   const navigate = useNavigate();
-  const [tier, setTier] = useState<Tier>('basic');
-
   const category = CATEGORY_BY_ID[categoryId as CategoryId];
+  const save = state.save;
+
+  const current = category ? nextStage(save, category.id) : null;
+  const currentIndex = current ? TIERS.indexOf(current.tier) * 3 + current.stage - 1 : 8;
+  const [selected, setSelected] = useState(currentIndex);
+
   if (!category) {
     return (
       <div className="screen">
-        <p>없는 카테고리예요.</p>
-        <button type="button" className="thick" onClick={() => navigate('/categories')}>
-          카테고리로 가기
-        </button>
+        <p>없는 섬이에요.</p>
+        <button type="button" className="thick" onClick={() => navigate('/')}>지도로 가기</button>
       </div>
     );
   }
 
-  const save = state.save;
+  const nodes = TIERS.flatMap((tier) => STAGES.map((stage) => {
+    const open = isStageUnlocked(save, category.id, tier, stage);
+    const cleared = isStageCleared(save, category.id, tier, stage);
+    const record = save.stages[stageKey(category.id, tier, stage)];
+    const count = questionsOfStage(category.id, tier, stage).length;
+    let status: string;
+    if (!open) {
+      status = isTierUnlocked(save, category.id, tier)
+        ? '앞 스테이지를 깨면 열립니다'
+        : tierUnlockHint(tier);
+    } else if (count === 0) status = '문제 준비 중';
+    else if (cleared) status = `클리어 · 최고 ${record?.bestCorrect ?? 0}/5`;
+    else status = `${count}문제 · 도전 가능`;
+    const best = record?.bestCorrect ?? 0;
+    return {
+      tier, stage, open, cleared, count, status,
+      title: category.stageTitles[tier][stage - 1],
+      stars: !cleared ? 0 : best >= 5 ? 3 : best >= 4 ? 2 : 1,
+      playable: open && count > 0,
+    };
+  }));
 
-  function startStage(stage: StageNo) {
-    const questions = questionsOfStage(category.id, tier, stage);
-    if (questions.length === 0) return;
-    dispatch({ type: 'START_STAGE', category: category.id, tier, stage, questions });
+  const pick = nodes[selected];
+  const growth = growthStageOf(getLevel(save.totalPrize).level);
+
+  function start() {
+    if (!pick.playable) return;
+    const questions = questionsOfStage(category.id, pick.tier, pick.stage);
+    dispatch({ type: 'START_STAGE', category: category.id, tier: pick.tier, stage: pick.stage, questions });
     navigate('/quiz');
   }
 
   return (
     <div className="screen">
-      <button
-        type="button"
-        className="muted"
-        style={{ background: 'none', border: 'none', padding: 0, marginBottom: 12 }}
-        onClick={() => navigate('/')}
-      >
-        ‹ 홈
-      </button>
-
-      <h2 style={{ fontSize: 18, margin: '0 0 4px' }}>
-        {category.emoji} {category.name}
-      </h2>
-      <p className="muted" style={{ fontSize: 12, margin: '0 0 14px' }}>
-        클리어 {clearedCount(save, category.id)}/9
-      </p>
-
-      <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
-        {TIERS.map((t) => {
-          const open = isTierUnlocked(save, category.id, t);
-          const active = t === tier;
-          return (
-            <button
-              key={t}
-              type="button"
-              onClick={() => setTier(t)}
-              style={{
-                flex: 1,
-                border: 'none',
-                borderRadius: 99,
-                padding: '8px 0',
-                fontWeight: 800,
-                fontSize: 12,
-                background: active ? 'var(--accent)' : 'var(--border)',
-                color: active ? '#fff' : 'var(--muted)',
-                opacity: open ? 1 : 0.6,
-              }}
-            >
-              {TIER_NAMES[t]}
-            </button>
-          );
-        })}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+        <button
+          type="button"
+          aria-label="지도로"
+          className="puffy"
+          onClick={() => navigate('/')}
+          style={{ width: 40, height: 40, borderRadius: 14, border: 'none', fontWeight: 900, fontSize: 18 }}
+        >
+          ‹
+        </button>
+        <div className="puffy" style={{ flex: 1, padding: '6px 10px', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Landmark category={category.id} size={30} />
+          <div style={{ flex: 1 }}>
+            <h2 style={{ fontSize: 15, margin: 0 }}>{category.name} 섬</h2>
+            <ProgressBar value={clearedCount(save, category.id)} max={9} />
+          </div>
+          <span className="muted" style={{ fontSize: 11, fontWeight: 900 }}>
+            {clearedCount(save, category.id)}/9
+          </span>
+        </div>
+        <span className="pill puffy" style={{ padding: '4px 10px 4px 5px' }}>
+          <Icon name="coin" size={20} />
+          {formatMoney(save.wallet)}
+        </span>
       </div>
 
       <div
         style={{
           position: 'relative',
-          borderRadius: 26,
-          padding: '18px 12px 10px',
-          background: 'linear-gradient(180deg, #e8f7df 0%, #d3eec3 100%)',
+          height: MAP_HEIGHT,
+          borderRadius: 30,
+          overflow: 'hidden',
+          background: 'linear-gradient(180deg,#f3eefc 0%,#e7ddfb 32%,#fff1d6 32%,#ffe2b8 64%,#dcf3d0 64%,#c7ebb6 100%)',
         }}
       >
-        {/* 스테이지를 잇는 길 */}
         <svg
           aria-hidden
-          viewBox="0 0 300 330"
+          viewBox={`0 0 330 ${MAP_HEIGHT}`}
           preserveAspectRatio="none"
-          style={{ position: 'absolute', inset: '30px 0 60px', width: '100%', height: 'calc(100% - 90px)' }}
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
         >
-          <path
-            d="M80 20 C 240 60, 240 120, 150 165 S 60 270, 220 310"
-            fill="none"
-            stroke="#fffbe8"
-            strokeWidth="26"
-            strokeLinecap="round"
-          />
-          <path
-            d="M80 20 C 240 60, 240 120, 150 165 S 60 270, 220 310"
-            fill="none"
-            stroke="#e9dcb4"
-            strokeWidth="3"
-            strokeDasharray="2 12"
-            strokeLinecap="round"
-          />
+          <path d="M0 150L60 90L110 130L170 60L240 120L290 80L330 140V224H0Z" fill="#fff" opacity=".8" />
+          <path d={pathThrough(NODE_POS)} fill="none" stroke="#fffaf0" strokeWidth="30" strokeLinecap="round" />
+          <path d={pathThrough(NODE_POS)} fill="none" stroke="#ecc98f" strokeWidth="3" strokeDasharray="2 12" strokeLinecap="round" />
         </svg>
+        <Icon name="tree" size={42} style={{ position: 'absolute', left: 8, top: 300, opacity: 0.7 }} />
+        <Icon name="tree" size={36} style={{ position: 'absolute', right: 12, top: 470, opacity: 0.7 }} />
+        <Icon name="sprout" size={32} style={{ position: 'absolute', left: 14, top: 540 }} />
 
-        {STAGES.map((stage, i) => {
-          const open = isStageUnlocked(save, category.id, tier, stage);
-          const cleared = isStageCleared(save, category.id, tier, stage);
-          const record = save.stages[stageKey(category.id, tier, stage)];
-          const count = questionsOfStage(category.id, tier, stage).length;
-          const title = category.stageTitles[tier][stage - 1];
-          const current = open && !cleared && count > 0;
+        {ZONES.map((z) => (
+          <span
+            key={z.tier}
+            className="pill puffy"
+            style={{ position: 'absolute', top: z.top, [z.side]: 10, padding: '3px 10px 3px 5px', fontSize: 11 }}
+          >
+            <Icon name={z.icon} size={18} />
+            {z.label}
+          </span>
+        ))}
 
-          let status: string;
-          if (!open) {
-            status = isTierUnlocked(save, category.id, tier)
-              ? '앞 스테이지를 깨면 열립니다'
-              : tierUnlockHint(tier);
-          } else if (count === 0) status = '문제 준비 중';
-          else if (cleared) status = `클리어 · 최고 ${record?.bestCorrect ?? 0}/5`;
-          else status = `${count}문제 · 도전 가능`;
+        {CHEST_POS.map(([x, y], i) => {
+          const tier = TIERS[i];
+          const done = STAGES.every((s) => isStageCleared(save, category.id, tier, s));
+          return (
+            <span key={tier} style={{ position: 'absolute', left: `${x}%`, top: y, marginLeft: -22 }}>
+              <Icon name={done ? 'party' : 'gift'} size={44} />
+            </span>
+          );
+        })}
+        <span style={{ position: 'absolute', left: '62%', top: 20 }}>
+          <Icon name="flag" size={40} />
+        </span>
 
-          const best = record?.bestCorrect ?? 0;
-          const stars = !cleared ? 0 : best >= 5 ? 3 : best >= 4 ? 2 : 1;
-          const offset = ['0%', '18%', '6%'][i];
-
+        {nodes.map((node, i) => {
+          const [x, y] = NODE_POS[i];
+          const isCurrent = current !== null && i === currentIndex;
+          const size = isCurrent ? 60 : 52;
+          const bg = node.cleared
+            ? 'radial-gradient(circle at 32% 28%,#fff1a8,#ffc94d 60%,#f0a830)'
+            : isCurrent
+              ? 'radial-gradient(circle at 32% 28%,#ffd0bf,#ff8a65 60%,#e8684a)'
+              : 'radial-gradient(circle at 32% 28%,#fff,#e6def5 60%,#cdc0e6)';
           return (
             <button
-              key={stage}
+              key={i}
               type="button"
-              disabled={!open || count === 0}
-              onClick={() => startStage(stage)}
+              aria-label={`${i + 1}단계 ${node.title}`}
+              aria-pressed={selected === i}
+              onClick={() => setSelected(i)}
+              className={`blob${isCurrent ? ' bob' : ''}`}
               style={{
-                position: 'relative',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-                width: `calc(100% - ${offset})`,
-                marginLeft: offset,
-                marginBottom: 22,
-                background: 'none',
-                border: 'none',
-                padding: 0,
-                textAlign: 'left',
-                color: 'var(--text)',
-                cursor: open && count > 0 ? 'pointer' : 'default',
+                position: 'absolute', left: `${x}%`, top: y, width: size, height: size,
+                marginLeft: -size / 2, marginTop: -size / 2 + 26, borderRadius: '50%', border: 'none',
+                background: bg,
+                color: node.cleared ? '#8a5a00' : isCurrent ? '#fff' : '#8e80aa',
+                fontWeight: 900, fontSize: isCurrent ? 20 : 17,
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                outline: selected === i ? '4px solid rgba(255,255,255,.95)' : 'none',
+                opacity: node.count === 0 && !node.cleared ? 0.7 : 1,
               }}
             >
-              <span
-                className={current ? 'bob' : undefined}
-                style={{
-                  width: 72, height: 72, borderRadius: '50%', flex: '0 0 auto',
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 26, fontWeight: 900,
-                  background: cleared
-                    ? 'radial-gradient(circle at 35% 30%, #ffe27a, #ffc21a)'
-                    : current
-                      ? 'radial-gradient(circle at 35% 30%, #9be27a, #58cc02)'
-                      : 'radial-gradient(circle at 35% 30%, #f1f1f1, #cfd3d6)',
-                  boxShadow: cleared
-                    ? '0 5px 0 #d9a100'
-                    : current
-                      ? '0 5px 0 #46a302'
-                      : '0 5px 0 #b3b8bc',
-                  color: cleared ? '#8a5a00' : current ? '#fff' : '#8e959b',
-                }}
-              >
-                {cleared ? '★' : open && count > 0 ? stage : '🔒'}
-                {cleared && (
-                  <span style={{ fontSize: 9, letterSpacing: 1, marginTop: -2 }}>
-                    {'★'.repeat(stars)}{'☆'.repeat(3 - stars)}
-                  </span>
-                )}
-              </span>
-              <span
-                style={{
-                  flex: 1,
-                  background: '#fff',
-                  borderRadius: 14,
-                  padding: '8px 12px',
-                  boxShadow: '0 3px 0 rgba(0,0,0,0.06)',
-                  opacity: open && count > 0 ? 1 : 0.8,
-                }}
-              >
-                {current && (
-                  <span
-                    style={{
-                      display: 'inline-block', fontSize: 10, fontWeight: 900, color: '#fff',
-                      background: '#ff8c42', borderRadius: 99, padding: '1px 8px', marginBottom: 3,
-                    }}
-                  >
-                    도전하기!
-                  </span>
-                )}
-                <span style={{ display: 'block', fontWeight: 900, fontSize: 15 }}>{title}</span>
-                <span className="muted" style={{ fontSize: 11 }}>{status}</span>
-              </span>
+              {i + 1}
+              {node.cleared && (
+                <span style={{ fontSize: 8, letterSpacing: 1, lineHeight: 1 }}>
+                  {'★'.repeat(node.stars)}{'☆'.repeat(3 - node.stars)}
+                </span>
+              )}
             </button>
           );
         })}
 
-        {/* 단계 보상 상자 */}
-        <div style={{ textAlign: 'center', paddingBottom: 6 }}>
-          <span aria-hidden style={{ fontSize: 40 }}>
-            {STAGES.every((st) => isStageCleared(save, category.id, tier, st)) ? '🎉' : '🎁'}
-          </span>
-          <div className="muted" style={{ fontSize: 11, fontWeight: 800 }}>
-            {TIER_NAMES[tier]} 3스테이지를 모두 깨면 다음 단계가 열려요
+        {current && (
+          <div
+            className="bob"
+            style={{
+              position: 'absolute', pointerEvents: 'none',
+              left: `calc(${NODE_POS[currentIndex][0]}% ${NODE_POS[currentIndex][0] > 50 ? '-' : '+'} 34px)`,
+              top: NODE_POS[currentIndex][1] - 10, marginLeft: -26,
+            }}
+          >
+            <Penguin stage={growth.index} size={52} outfit={save.settings.outfit} />
           </div>
+        )}
+      </div>
+
+      <div
+        className="puffy"
+        style={{
+          position: 'sticky', bottom: 96, marginTop: 12, padding: '12px 14px', borderRadius: 24,
+          display: 'flex', alignItems: 'center', gap: 10,
+        }}
+      >
+        <span
+          className="blob"
+          style={{
+            width: 44, height: 44, borderRadius: '50%', flex: '0 0 auto',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontWeight: 900, fontSize: 17, color: '#fff',
+            background: pick.cleared
+              ? 'radial-gradient(circle at 32% 28%,#fff1a8,#ffc94d 60%,#f0a830)'
+              : pick.playable
+                ? 'radial-gradient(circle at 32% 28%,#ffd0bf,#ff8a65 60%,#e8684a)'
+                : 'radial-gradient(circle at 32% 28%,#fff,#e6def5 60%,#cdc0e6)',
+          }}
+        >
+          {pick.open ? selected + 1 : <Icon name="lock" size={26} />}
+        </span>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div className="muted" style={{ fontSize: 10, fontWeight: 900 }}>
+            {TIER_NAMES[pick.tier]} {pick.stage}
+          </div>
+          <div style={{ fontSize: 15, fontWeight: 900 }}>{pick.title}</div>
+          <div className="muted" style={{ fontSize: 11 }}>{pick.status}</div>
         </div>
+        <button
+          type="button"
+          className="thick-accent"
+          disabled={!pick.playable}
+          onClick={start}
+          style={{ width: 'auto', padding: '10px 18px', fontSize: 14 }}
+        >
+          {pick.cleared ? '다시 도전' : '도전'}
+        </button>
       </div>
     </div>
   );

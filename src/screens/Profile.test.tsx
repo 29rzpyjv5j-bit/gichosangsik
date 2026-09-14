@@ -36,17 +36,17 @@ test('레벨·상금·통계가 보인다', () => {
   expect(screen.getByText(/마을 백과사전/)).toBeInTheDocument();
   expect(screen.getByText('1,024,000원')).toBeInTheDocument();
   expect(screen.getByText(/만점 4회/)).toBeInTheDocument();
-  expect(screen.getByText(/볼게임 9회/)).toBeInTheDocument();
+  expect(screen.getByText(/섞어 풀기 9회/)).toBeInTheDocument();
   expect(screen.getByText(/총 3판/)).toBeInTheDocument();
 });
 
-test('보유한 테마만 적용할 수 있다', async () => {
-  saveSave(makeSave({ owned: { themes: ['default', 'ocean'], avatars: ['smile'] } }));
+test('방과 성장 단계가 보이고 상점으로 갈 수 있다', async () => {
+  saveSave(makeSave({ owned: { themes: ['default'], avatars: ['smile'], furniture: ['plant'], outfits: [] }, settings: { ...makeSave().settings, room: { left: 'plant' } } }));
   renderProfile();
-  expect(screen.getByRole('button', { name: /바다/ })).toBeEnabled();
-  expect(screen.getByRole('button', { name: /라벤더/ })).toBeDisabled();
-  await userEvent.click(screen.getByRole('button', { name: /바다/ }));
-  expect(document.documentElement.getAttribute('data-theme')).toBe('ocean');
+  expect(screen.getByLabelText('동글 화분')).toBeInTheDocument();
+  expect(screen.getAllByText('???').length).toBeGreaterThan(0);
+  await userEvent.click(screen.getByRole('button', { name: /방 꾸미기/ }));
+  expect(screen.getByRole('tab', { name: '가구', selected: true })).toBeInTheDocument();
 });
 
 test('초기화는 두 번 눌러야 실행된다', async () => {

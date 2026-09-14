@@ -43,7 +43,7 @@ async function playPerfect(save = makeSave()) {
       <GameProvider><App /></GameProvider>
     </MemoryRouter>,
   );
-  await userEvent.click(screen.getByRole('button', { name: /우리 몸/ }));
+  await userEvent.click(screen.getByRole('button', { name: '도전' }));
   for (let i = 0; i < 5; i++) {
     await userEvent.click(screen.getByRole('button', { name: '나' }));
     await userEvent.click(screen.getByRole('button', { name: '계속' }));
@@ -66,7 +66,7 @@ test('아이템 사용 비용은 결과에 표시하지 않는다', async () => 
       <GameProvider><App /></GameProvider>
     </MemoryRouter>,
   );
-  await userEvent.click(screen.getByRole('button', { name: /우리 몸/ }));
+  await userEvent.click(screen.getByRole('button', { name: '도전' }));
   await userEvent.click(screen.getByRole('button', { name: /힌트/ }));
   for (let i = 0; i < 5; i++) {
     await userEvent.click(screen.getByRole('button', { name: '나' }));
@@ -91,7 +91,7 @@ test('레벨업이 있으면 오버레이가 먼저 뜨고 닫을 수 있다', a
 test('나가기를 누르면 홈으로 간다', async () => {
   await playPerfect();
   await userEvent.click(screen.getByRole('button', { name: '나가기' }));
-  expect(screen.getByRole('button', { name: /오늘의 볼게임 시작|한 판 더/ })).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: '어느 섬으로 떠날까요?' })).toBeInTheDocument();
 });
 
 test('다음 스테이지를 누르면 다음 스테이지의 퀴즈로 이동한다', async () => {
@@ -115,6 +115,6 @@ test('결과 없이 직접 들어오면 홈으로 돌려보낸다', () => {
       <GameProvider><App /></GameProvider>
     </MemoryRouter>,
   );
-  expect(screen.getByRole('button', { name: /오늘의 볼게임 시작|한 판 더|문제 준비 중/ }))
+  expect(screen.getByRole('heading', { name: '어느 섬으로 떠날까요?' }))
     .toBeInTheDocument();
 });

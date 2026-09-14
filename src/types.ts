@@ -38,6 +38,9 @@ export type LevelInfo = { level: number; title: string; threshold: number };
 export type ThemeId = 'default' | 'apricot' | 'lavender' | 'ocean' | 'night';
 export type AvatarId = 'smile' | 'chick' | 'owl' | 'fox' | 'panda' | 'lion';
 
+export type RoomSlot = 'wall' | 'left' | 'right' | 'rug';
+export type OutfitSlot = 'hat' | 'neck' | 'face';
+
 export type StageRecord = { cleared: boolean; bestCorrect: number; plays: number };
 
 export type SaveState = {
@@ -52,8 +55,8 @@ export type SaveState = {
   perfectCount: number;
   dailyGame: { lastBonusDate: string | null; completed: number };
   badges: { id: string; earnedAt: string }[];
-  owned: { themes: ThemeId[]; avatars: AvatarId[] };
-  settings: { theme: ThemeId; avatar: AvatarId };
+  owned: { themes: ThemeId[]; avatars: AvatarId[]; furniture: string[]; outfits: string[] };
+  settings: { theme: ThemeId; avatar: AvatarId; room: Partial<Record<RoomSlot, string>>; outfit: Partial<Record<OutfitSlot, string>> };
   lastPlayed: { category: CategoryId; tier: Tier; stage: StageNo } | null;
 };
 

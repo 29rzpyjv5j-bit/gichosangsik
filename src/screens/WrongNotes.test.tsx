@@ -67,3 +67,18 @@ test('복습에서 맞히면 오답노트에서 빠진다', async () => {
   expect(screen.getByText('복습 끝!')).toBeInTheDocument();
   expect(screen.getByText('오답 정답 1개')).toBeInTheDocument();
 });
+
+test('섞어 풀기는 복습 탭에서 시작한다', async () => {
+  saveSave(makeSave());
+  renderAt('/wrong-notes');
+  await userEvent.click(screen.getByRole('button', { name: /섞어 풀기 시작/ }));
+  expect(screen.getByText(/^문제 [123]$/)).toBeInTheDocument();
+});
+
+test('오늘 보너스를 이미 받았으면 한 판 더로 바뀐다', () => {
+  const today = new Date();
+  const iso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  saveSave(makeSave({ dailyGame: { lastBonusDate: iso, completed: 1 } }));
+  renderAt('/wrong-notes');
+  expect(screen.getByRole('button', { name: /한 판 더/ })).toBeEnabled();
+});

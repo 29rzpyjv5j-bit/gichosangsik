@@ -1,18 +1,17 @@
 import { GROWTH_STAGES, type GrowthStage } from '../domain/growth';
+import { OUTFIT_BY_ID } from '../data/outfits';
+import type { OutfitSlot } from '../types';
 
-const NAVY = '#2b3a55';
-const BELLY = '#f7f4ee';
-const BEAK = '#ffb347';
+const EYE = '#2a2f3f';
 const CHEEK = '#ffb3b3';
-const EYE = '#1e2433';
 
 function Eyes() {
   return (
     <>
-      <circle cx="84" cy="92" r="7" fill={EYE} />
-      <circle cx="116" cy="92" r="7" fill={EYE} />
-      <circle cx="86.5" cy="89.5" r="2.4" fill="#fff" />
-      <circle cx="118.5" cy="89.5" r="2.4" fill="#fff" />
+      <circle cx="83" cy="92" r="8" fill={EYE} />
+      <circle cx="117" cy="92" r="8" fill={EYE} />
+      <circle cx="86" cy="89" r="3" fill="#fff" />
+      <circle cx="120" cy="89" r="3" fill="#fff" />
     </>
   );
 }
@@ -21,60 +20,71 @@ function Egg() {
   return (
     <g>
       <path
-        d="M100 28 C150 28 166 108 166 136 C166 170 138 186 100 186 C62 186 34 170 34 136 C34 108 50 28 100 28 Z"
-        fill="#fff8ec"
+        d="M100 28C150 28 166 108 166 136C166 170 138 186 100 186C62 186 34 170 34 136C34 108 50 28 100 28Z"
+        fill="url(#pg-belly)"
         stroke="#f0dfc4"
         strokeWidth="3"
       />
-      <path d="M56 78 C70 34 130 34 144 78 L130 90 L116 74 L100 92 L84 74 L70 90 Z" fill={NAVY} />
-      <circle cx="84" cy="118" r="6.5" fill={EYE} />
-      <circle cx="116" cy="118" r="6.5" fill={EYE} />
-      <circle cx="86" cy="116" r="2.2" fill="#fff" />
-      <circle cx="118" cy="116" r="2.2" fill="#fff" />
-      <ellipse cx="72" cy="134" rx="8" ry="5" fill={CHEEK} />
-      <ellipse cx="128" cy="134" rx="8" ry="5" fill={CHEEK} />
-      <path d="M94 128 L106 128 L100 136 Z" fill={BEAK} />
+      <path d="M56 78C70 34 130 34 144 78L130 90L116 74L100 92L84 74L70 90Z" fill="url(#pg-body)" />
+      <circle cx="84" cy="118" r="7" fill={EYE} />
+      <circle cx="116" cy="118" r="7" fill={EYE} />
+      <circle cx="86.5" cy="115.5" r="2.4" fill="#fff" />
+      <circle cx="118.5" cy="115.5" r="2.4" fill="#fff" />
+      <ellipse cx="70" cy="134" rx="9" ry="5.5" fill={CHEEK} />
+      <ellipse cx="130" cy="134" rx="9" ry="5.5" fill={CHEEK} />
+      <path d="M92 128Q100 125 108 128L100 138Z" fill="url(#pg-beak)" />
+      <ellipse cx="80" cy="52" rx="16" ry="7" fill="#fff" opacity=".4" />
     </g>
   );
 }
 
-function Body({ stage }: { stage: 1 | 2 | 3 | 4 }) {
-  const color = stage === 1 ? '#9aa7b8' : NAVY;
-  const face = stage === 1 ? '#e9eef4' : BELLY;
-  const scale = [0, 0.72, 0.84, 0.95, 1][stage];
+function Body({ stage, outfit }: { stage: 1 | 2 | 3 | 4; outfit: Partial<Record<OutfitSlot, string>> }) {
+  const fill = stage === 1 ? 'url(#pg-baby)' : 'url(#pg-body)';
+  const scale = [0, 0.74, 0.86, 0.95, 1][stage];
+  const hat = outfit.hat ? OUTFIT_BY_ID[outfit.hat] : undefined;
+  const neck = outfit.neck ? OUTFIT_BY_ID[outfit.neck] : undefined;
+  const face = outfit.face ? OUTFIT_BY_ID[outfit.face] : undefined;
+
   return (
     <g transform={`translate(100 184) scale(${scale}) translate(-100 -184)`}>
-      <ellipse cx="82" cy="180" rx="14" ry="7" fill={BEAK} />
-      <ellipse cx="118" cy="180" rx="14" ry="7" fill={BEAK} />
-      <ellipse cx="46" cy="124" rx="14" ry="34" fill={color} transform="rotate(20 46 124)" />
-      <ellipse cx="154" cy="124" rx="14" ry="34" fill={color} transform="rotate(-20 154 124)" />
-      <ellipse cx="100" cy="118" rx="58" ry="66" fill={color} />
-      <ellipse cx="100" cy="134" rx="40" ry="46" fill={BELLY} />
-      <ellipse cx="100" cy="96" rx="44" ry="30" fill={face} />
-      {stage === 1 && (
-        <path d="M96 54 C90 42 104 38 100 28 C112 38 110 48 106 55 Z" fill={color} />
-      )}
+      <ellipse cx="82" cy="180" rx="15" ry="8" fill="url(#pg-beak)" />
+      <ellipse cx="118" cy="180" rx="15" ry="8" fill="url(#pg-beak)" />
+      <ellipse cx="44" cy="126" rx="15" ry="33" fill={fill} transform="rotate(22 44 126)" />
+      <ellipse cx="156" cy="126" rx="15" ry="33" fill={fill} transform="rotate(-22 156 126)" />
+      <ellipse cx="100" cy="116" rx="60" ry="68" fill={fill} />
+      {stage === 1 && <path d="M96 52C88 40 104 34 100 22C114 34 112 46 106 54Z" fill="#aab4c2" />}
+      <ellipse cx="100" cy="134" rx="41" ry="46" fill="url(#pg-belly)" />
+      <ellipse cx="100" cy="94" rx="45" ry="31" fill="url(#pg-belly)" />
       <Eyes />
-      <ellipse cx="70" cy="106" rx="8" ry="5" fill={CHEEK} />
-      <ellipse cx="130" cy="106" rx="8" ry="5" fill={CHEEK} />
-      <path d="M92 102 L108 102 L100 112 Z" fill={BEAK} />
-      {stage >= 3 && (
+      <ellipse cx="66" cy="108" rx="10" ry="6" fill={CHEEK} opacity=".9" />
+      <ellipse cx="134" cy="108" rx="10" ry="6" fill={CHEEK} opacity=".9" />
+      <path d="M90 102Q100 98 110 102L100 114Z" fill="url(#pg-beak)" />
+      <ellipse cx="78" cy="62" rx="18" ry="8" fill="#fff" opacity=".35" />
+
+      {stage >= 3 && !neck && (
         <>
-          <path d="M58 124 C80 136 120 136 142 124 L142 136 C120 148 80 148 58 136 Z" fill="#ff6b6b" />
-          <path d="M120 138 L136 166 L118 162 Z" fill="#ff6b6b" />
+          <path d="M58 122C80 134 120 134 142 122L142 136C120 148 80 148 58 136Z" fill="url(#g-coral)" />
+          <path d="M118 138L134 166L116 162Z" fill="#e8684a" />
         </>
       )}
-      {stage === 4 && (
+      {stage === 4 && !face && (
         <>
-          <circle cx="84" cy="92" r="12" fill="none" stroke={EYE} strokeWidth="3" />
-          <circle cx="116" cy="92" r="12" fill="none" stroke={EYE} strokeWidth="3" />
-          <path d="M96 92 L104 92" stroke={EYE} strokeWidth="3" />
-          <path d="M72 58 L72 70 C86 78 114 78 128 70 L128 58 L100 68 Z" fill="#23283a" />
-          <path d="M46 48 L100 26 L154 48 L100 68 Z" fill="#23283a" />
-          <path d="M100 47 L146 60 L146 80" stroke="#ffc93c" strokeWidth="3" fill="none" />
-          <circle cx="146" cy="82" r="5" fill="#ffc93c" />
+          <circle cx="83" cy="92" r="13" fill="none" stroke={EYE} strokeWidth="3" />
+          <circle cx="117" cy="92" r="13" fill="none" stroke={EYE} strokeWidth="3" />
+          <path d="M96 92H104" stroke={EYE} strokeWidth="3" />
         </>
       )}
+      {stage === 4 && !hat && (
+        <>
+          <path d="M72 58V70C86 78 114 78 128 70V58L100 68Z" fill="#3a3f55" />
+          <path d="M46 48L100 26L154 48L100 68Z" fill="#3a3f55" />
+          <path d="M100 47L146 60V80" stroke="#ffc94d" strokeWidth="3" fill="none" />
+          <circle cx="146" cy="82" r="5" fill="#ffc94d" />
+        </>
+      )}
+      {neck?.art}
+      {face?.art}
+      {hat?.art}
     </g>
   );
 }
@@ -82,10 +92,12 @@ function Body({ stage }: { stage: 1 | 2 | 3 | 4 }) {
 export function Penguin({
   stage,
   size = 160,
+  outfit = {},
   className,
 }: {
   stage: GrowthStage['index'];
   size?: number;
+  outfit?: Partial<Record<OutfitSlot, string>>;
   className?: string;
 }) {
   return (
@@ -97,8 +109,8 @@ export function Penguin({
       aria-label={GROWTH_STAGES[stage].name}
       className={className}
     >
-      <ellipse cx="100" cy="188" rx="50" ry="7" fill="rgba(0,0,0,0.10)" />
-      {stage === 0 ? <Egg /> : <Body stage={stage} />}
+      <ellipse cx="100" cy="189" rx="48" ry="7" fill="rgba(90,60,40,0.16)" />
+      {stage === 0 ? <Egg /> : <Body stage={stage} outfit={outfit} />}
     </svg>
   );
 }

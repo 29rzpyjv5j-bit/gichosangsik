@@ -86,7 +86,7 @@ test('패스한 문제는 상금을 주지 않는다', () => {
   expect(sumLines(lines)).toBe(0);
 });
 
-test('볼게임은 단계가 섞이고 완료 보너스는 자격이 있을 때만 붙는다', () => {
+test('섞어 풀기은 단계가 섞이고 완료 보너스는 자격이 있을 때만 붙는다', () => {
   const questions = [
     makeQuestion({ id: 'a', tier: 'basic' }),
     makeQuestion({ id: 'b', tier: 'mid' }),
@@ -102,13 +102,13 @@ test('볼게임은 단계가 섞이고 완료 보너스는 자격이 있을 때�
   });
   // 10,000 + 15,000 + 20,000 = 45,000, + 보너스 30,000
   expect(sumLines(withBonus)).toBe(75_000);
-  expect(withBonus.at(-1)).toEqual({ label: '볼게임 완료 보너스', amount: 30_000 });
+  expect(withBonus.at(-1)).toEqual({ label: '섞어 풀기 보너스', amount: 30_000 });
 
   const withoutBonus = dailyPrizeLines({
     questions, results: [...results], alreadyCorrect: already, bonusEligible: false,
   });
   expect(sumLines(withoutBonus)).toBe(45_000);
-  expect(withoutBonus.map((l) => l.label)).not.toContain('볼게임 완료 보너스');
+  expect(withoutBonus.map((l) => l.label)).not.toContain('섞어 풀기 보너스');
 });
 
 test('오답노트 정답은 문제당 5,000원 정액이다', () => {

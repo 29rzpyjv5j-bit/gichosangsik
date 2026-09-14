@@ -3,6 +3,7 @@ import { useGame } from '../state/GameProvider';
 import { CATEGORIES } from '../data/categories';
 import { clearedCount } from '../domain/unlock';
 import { ProgressBar } from '../components/ProgressBar';
+import { Landmark } from '../components/Icons';
 
 export default function Categories() {
   const { state } = useGame();
@@ -31,7 +32,7 @@ export default function Categories() {
               onClick={() => navigate(`/category/${c.id}`)}
               style={{ display: 'flex', alignItems: 'center', gap: 10 }}
             >
-              <span style={{ fontSize: 18 }}>{c.emoji}</span>
+              <Landmark category={c.id} size={34} />
               <span style={{ flex: 1 }}>
                 <span style={{ display: 'block', marginBottom: 4 }}>{c.name}</span>
                 <ProgressBar value={done} max={9} />

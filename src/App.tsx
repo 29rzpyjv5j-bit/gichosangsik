@@ -1,5 +1,6 @@
 import { Routes, Route, useLocation } from 'react-router-dom';
 import { TabBar } from './components/TabBar';
+import { GradientDefs } from './components/Icons';
 import Home from './screens/Home';
 import Categories from './screens/Categories';
 import CategoryDetail from './screens/CategoryDetail';
@@ -15,6 +16,7 @@ export default function App() {
   const showTabs = pathname !== '/quiz' && pathname !== '/result';
   return (
     <>
+    <GradientDefs />
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/categories" element={<Categories />} />

@@ -13,8 +13,8 @@ export function makeSave(partial: Partial<SaveState> = {}): SaveState {
     perfectCount: 0,
     dailyGame: { lastBonusDate: null, completed: 0 },
     badges: [],
-    owned: { themes: ['default'], avatars: ['smile', 'chick', 'owl'] },
-    settings: { theme: 'default', avatar: 'smile' },
+    owned: { themes: ['default'], avatars: ['smile', 'chick', 'owl'], furniture: [], outfits: [] },
+    settings: { theme: 'default', avatar: 'smile', room: {}, outfit: {} },
     lastPlayed: null,
     ...partial,
   };

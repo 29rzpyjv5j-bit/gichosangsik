@@ -16,6 +16,9 @@ import { getLevel } from '../domain/level';
 import { isDailyBonusEligible, mulberry32 } from '../domain/dailyGame';
 import { nextStage } from '../domain/unlock';
 import { THEMES, AVATARS } from '../data/shop';
+import { FURNITURE_BY_ID } from '../data/furniture';
+import { OUTFIT_BY_ID } from '../data/outfits';
+import type { OutfitSlot, RoomSlot } from '../types';
 
 export type StorageWarning = 'none' | 'corrupted' | 'unavailable';
 
@@ -50,6 +53,10 @@ export type Action =
   | { type: 'CLEAR_RESULT' }
   | { type: 'BUY_THEME'; theme: ThemeId }
   | { type: 'BUY_AVATAR'; avatar: AvatarId }
+  | { type: 'BUY_FURNITURE'; id: string }
+  | { type: 'PLACE_FURNITURE'; slot: RoomSlot; id: string | null }
+  | { type: 'BUY_OUTFIT'; id: string }
+  | { type: 'WEAR_OUTFIT'; slot: OutfitSlot; id: string | null }
   | { type: 'SET_THEME'; theme: ThemeId }
   | { type: 'SET_AVATAR'; avatar: AvatarId }
   | { type: 'RESET_ALL' };
@@ -249,6 +256,77 @@ export function gameReducer(state: AppState, action: Action): AppState {
         ...state,
         save: { ...state.save, settings: { ...state.save.settings, avatar: action.avatar } },
       };
+
+    case 'BUY_FURNITURE': {
+      const item = FURNITURE_BY_ID[action.id];
+      if (!item) return state;
+      if (state.save.owned.furniture.includes(item.id)) return state;
+      if (state.save.wallet < item.price) return state;
+      if (getLevel(state.save.totalPrize).level < item.unlockLevel) return state;
+      return {
+        ...state,
+        save: {
+          ...state.save,
+          wallet: state.save.wallet - item.price,
+          owned: { ...state.save.owned, furniture: [...state.save.owned.furniture, item.id] },
+          // 산 가구는 바로 제자리에 놓는다
+          settings: {
+            ...state.save.settings,
+            room: { ...state.save.settings.room, [item.slot]: item.id },
+          },
+        },
+      };
+    }
+
+    case 'PLACE_FURNITURE': {
+      if (action.id !== null) {
+        const item = FURNITURE_BY_ID[action.id];
+        if (!item || item.slot !== action.slot) return state;
+        if (!state.save.owned.furniture.includes(item.id)) return state;
+      }
+      const room = { ...state.save.settings.room };
+      if (action.id === null) delete room[action.slot];
+      else room[action.slot] = action.id;
+      return {
+        ...state,
+        save: { ...state.save, settings: { ...state.save.settings, room } },
+      };
+    }
+
+    case 'BUY_OUTFIT': {
+      const item = OUTFIT_BY_ID[action.id];
+      if (!item) return state;
+      if (state.save.owned.outfits.includes(item.id)) return state;
+      if (state.save.wallet < item.price) return state;
+      if (getLevel(state.save.totalPrize).level < item.unlockLevel) return state;
+      return {
+        ...state,
+        save: {
+          ...state.save,
+          wallet: state.save.wallet - item.price,
+          owned: { ...state.save.owned, outfits: [...state.save.owned.outfits, item.id] },
+          settings: {
+            ...state.save.settings,
+            outfit: { ...state.save.settings.outfit, [item.slot]: item.id },
+          },
+        },
+      };
+    }
+
+    case 'WEAR_OUTFIT': {
+      if (action.id !== null) {
+        const item = OUTFIT_BY_ID[action.id];
+        if (!item || item.slot !== action.slot) return state;
+        if (!state.save.owned.outfits.includes(item.id)) return state;
+      }
+      const outfit = { ...state.save.settings.outfit };
+      if (action.id === null) delete outfit[action.slot];
+      else outfit[action.slot] = action.id;
+      return {
+        ...state,
+        save: { ...state.save, settings: { ...state.save.settings, outfit } },
+      };
+    }
 
     case 'RESET_ALL':
       return { ...state, save: defaultSave(), session: null, lastResult: null };

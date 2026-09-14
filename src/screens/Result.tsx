@@ -7,6 +7,7 @@ import { questionsOfStage } from '../data/questions';
 import { TIER_NAMES } from '../types';
 import { formatMoney } from '../components/Money';
 import { Medal } from '../components/Medal';
+import { Icon } from '../components/Icons';
 import { Overlay } from '../components/Overlay';
 import { getLevel } from '../domain/level';
 
@@ -33,7 +34,7 @@ export default function Result() {
       ? '스테이지 클리어!'
       : '아쉬워요'
     : result.mode.kind === 'daily'
-      ? '오늘의 볼게임 끝!'
+      ? '섞어 풀기 끝!'
       : '복습 끝!';
 
   const subtitle = stage
@@ -79,7 +80,7 @@ export default function Result() {
   return (
     <div className="screen">
       <div style={{ textAlign: 'center', padding: '18px 0 10px' }}>
-        <div style={{ fontSize: 36 }}>{result.cleared || !stage ? '🎉' : '💪'}</div>
+        <Icon name={result.cleared || !stage ? 'party' : 'flag'} size={56} style={{ display: 'block', margin: '0 auto' }} />
         <h2 style={{ fontSize: 18, margin: '6px 0 4px', color: 'var(--accent)' }}>{title}</h2>
         <p className="muted" style={{ fontSize: 12, margin: 0 }}>{subtitle}</p>
       </div>
@@ -122,7 +123,7 @@ export default function Result() {
                   borderRadius: 12, padding: 10,
                 }}
               >
-                <Medal emoji={badge.emoji} group={badge.group} earned size={38} />
+                <Medal id={badge.id} group={badge.group} earned size={38} />
                 <div style={{ fontSize: 12 }}>
                   <b style={{ display: 'block', fontSize: 13 }}>새 뱃지 · {badge.name}</b>
                   획득했어요
@@ -157,7 +158,7 @@ export default function Result() {
               color: '#fff', borderRadius: 22, padding: '26px 18px 22px', textAlign: 'center',
             }}
           >
-            <div style={{ fontSize: 40 }}>🎊</div>
+            <Icon name="medal" size={60} style={{ display: 'block', margin: '0 auto' }} />
             <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.14em', opacity: 0.9 }}>
               LEVEL UP
             </div>

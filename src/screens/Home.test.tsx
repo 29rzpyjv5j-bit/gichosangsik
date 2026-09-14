@@ -38,65 +38,50 @@ function renderApp() {
   );
 }
 
-test('레벨 칭호와 상금, 지갑이 보인다', () => {
+test('레벨, 성장 단계, 지갑이 보인다', () => {
   saveSave(makeSave({ totalPrize: 1_024_000, wallet: 28_000 }));
   renderApp();
   expect(screen.getByText(/Lv\.6/)).toBeInTheDocument();
   expect(screen.getByText(/마을 백과사전/)).toBeInTheDocument();
-  expect(screen.getByText('1,024,000원')).toBeInTheDocument();
   expect(screen.getByText('28,000원')).toBeInTheDocument();
 });
 
-test('오늘 보너스를 안 받았으면 볼게임 시작 버튼이 보인다', () => {
+test('홈에는 섞어 풀기가 없다', () => {
   saveSave(makeSave());
   renderApp();
-  expect(screen.getByRole('button', { name: /오늘의 볼게임 시작/ })).toBeEnabled();
+  expect(screen.queryByRole('button', { name: /섞어 풀기/ })).not.toBeInTheDocument();
 });
 
-test('오늘 보너스를 이미 받았으면 한 판 더로 바뀐다', () => {
-  const today = new Date();
-  const iso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-  saveSave(makeSave({ dailyGame: { lastBonusDate: iso, completed: 1 } }));
+test('기록이 없으면 첫 섬을 가리킨다', () => {
+  saveSave(makeSave());
   renderApp();
-  expect(screen.getByRole('button', { name: /한 판 더/ })).toBeInTheDocument();
+  expect(screen.getByText(/한국사 섬부터 시작해요/)).toBeInTheDocument();
 });
 
-test('오답노트 복습 퀘스트에 남은 문제 수가 보인다', () => {
+test('마지막으로 플레이한 섬은 다음 단계를 가리킨다', () => {
   saveSave(makeSave({
-    wrongNotes: ['sc-b-01', 'sc-b-02'],
-    badges: [{ id: 'perfect-1', earnedAt: '2026-09-13' }],
+    stages: { [stageKey('science', 'basic', 1)]: { cleared: true, bestCorrect: 5, plays: 1 } },
+    lastPlayed: { category: 'science', tier: 'basic', stage: 1 },
   }));
   renderApp();
-  expect(screen.getByRole('button', { name: /오답노트 복습/ })).toHaveTextContent('2문제');
+  expect(screen.getByText(/과학 섬 2단계부터!/)).toBeInTheDocument();
 });
 
-test('기록이 없으면 이어서 하기가 첫 카테고리를 가리킨다', () => {
-  saveSave(makeSave());
-  renderApp();
-  expect(screen.getByText(/한국사부터 시작하기/)).toBeInTheDocument();
-});
-
-test('마지막 플레이 카테고리를 다 깼으면 다음 카테고리로 표시한다', () => {
+test('마지막 섬을 다 깼으면 다음 섬으로 넘어간다', () => {
   const stages: Record<string, { cleared: boolean; bestCorrect: number; plays: number }> = {};
-  // Mark all korean-history stages as cleared
   for (const tier of TIERS) {
     for (const stage of [1, 2, 3] as const) {
       stages[stageKey('korean-history', tier, stage)] = { cleared: true, bestCorrect: 3, plays: 1 };
     }
   }
-  saveSave(makeSave({
-    stages,
-    lastPlayed: { category: 'korean-history', tier: 'basic', stage: 1 },
-  }));
+  saveSave(makeSave({ stages, lastPlayed: { category: 'korean-history', tier: 'basic', stage: 1 } }));
   renderApp();
-  // Should show world-history (next category), not "이어서 하기"
-  expect(screen.getByText(/세계사부터 시작하기/)).toBeInTheDocument();
-  expect(screen.queryByText(/이어서 하기/)).not.toBeInTheDocument();
+  expect(screen.getByText(/세계사 섬부터 시작해요/)).toBeInTheDocument();
 });
 
-test('카테고리 칩을 누르면 카테고리 화면으로 간다', async () => {
+test('섬을 누르면 그 섬의 단계 지도로 간다', async () => {
   saveSave(makeSave());
   renderApp();
-  await userEvent.click(screen.getByRole('button', { name: /과학/ }));
-  expect(screen.getByRole('button', { name: '입문' })).toBeInTheDocument();
+  await userEvent.click(screen.getByRole('button', { name: /^과학/ }));
+  expect(screen.getByRole('heading', { name: '과학 섬' })).toBeInTheDocument();
 });

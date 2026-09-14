@@ -75,8 +75,8 @@ const perfectBadges: Badge[] = [
 }));
 
 const dailyBadges: Badge[] = [
-  { id: 'daily-7', name: '볼게임 7회', emoji: '📅', need: 7 },
-  { id: 'daily-30', name: '볼게임 30회', emoji: '🗓️', need: 30 },
+  { id: 'daily-7', name: '섞어 풀기 7회', emoji: '📅', need: 7 },
+  { id: 'daily-30', name: '섞어 풀기 30회', emoji: '🗓️', need: 30 },
 ].map((m) => ({
   id: m.id,
   name: m.name,

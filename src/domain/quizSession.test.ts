@@ -81,7 +81,7 @@ test('3문제 이상 맞히면 클리어, 2문제면 아니다', () => {
   expect(isCleared(t)).toBe(false);
 });
 
-test('볼게임과 오답노트 모드에는 클리어 개념이 없다', () => {
+test('섞어 풀기과 오답노트 모드에는 클리어 개념이 없다', () => {
   let s = startSession({ kind: 'daily' }, five(), [false, false, false, false, false]);
   [1, 1, 1, 1, 1].forEach((pick) => {
     s = advance(answerCurrent(s, pick));

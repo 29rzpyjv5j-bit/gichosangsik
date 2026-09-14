@@ -1,251 +1,180 @@
-import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGame } from '../state/GameProvider';
 import { getLevel } from '../domain/level';
 import { clearedCount, nextStageAnywhere } from '../domain/unlock';
-import { growthStageOf, nextGrowthStage } from '../domain/growth';
-import {
-  isDailyBonusEligible, mulberry32, pickDailyQuestions, todayString, unlockedQuestions,
-} from '../domain/dailyGame';
+import { growthStageOf } from '../domain/growth';
 import { ALL_QUESTIONS } from '../data/questions';
-import { CATEGORIES, CATEGORY_BY_ID } from '../data/categories';
-import { LEVELS } from '../data/levels';
-import { TIER_NAMES } from '../types';
+import { CATEGORY_BY_ID } from '../data/categories';
+import { TIERS } from '../types';
+import type { CategoryId } from '../types';
 import { formatMoney } from '../components/Money';
-import { ProgressBar } from '../components/ProgressBar';
 import { Penguin } from '../components/Penguin';
+import { Icon, IslandShape, ISLAND_COLOR, Landmark } from '../components/Icons';
 
-const card = {
-  border: '2px solid var(--border)',
-  borderBottomWidth: 4,
-  borderRadius: 18,
-  background: 'var(--surface)',
-  color: 'var(--text)',
-} as const;
-
-const pill = {
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: 6,
-  background: 'var(--surface)',
-  border: '2px solid var(--border)',
-  borderRadius: 99,
-  padding: '5px 12px 5px 6px',
-  fontWeight: 900,
-  fontSize: 14,
-} as const;
-
-function QuestRow({
-  icon, iconBg, title, sub, done, disabled, onClick,
-}: {
-  icon: string;
-  iconBg: string;
-  title: ReactNode;
-  sub: ReactNode;
-  done?: boolean;
-  disabled?: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      style={{
-        ...card,
-        width: '100%',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 12,
-        padding: 12,
-        textAlign: 'left',
-        opacity: disabled ? 0.55 : 1,
-      }}
-    >
-      <span
-        aria-hidden
-        style={{
-          width: 46, height: 46, borderRadius: 14, flex: '0 0 auto',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 24, background: iconBg,
-        }}
-      >
-        {icon}
-      </span>
-      <span style={{ flex: 1, minWidth: 0 }}>
-        <span style={{ display: 'block', fontSize: 15, fontWeight: 900 }}>{title}</span>
-        <span className="muted" style={{ display: 'block', fontSize: 11, marginTop: 2 }}>{sub}</span>
-      </span>
-      <span
-        aria-hidden
-        style={{
-          width: 30, height: 30, borderRadius: '50%', flex: '0 0 auto',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 14, fontWeight: 900,
-          background: done ? 'var(--accent)' : 'var(--bg)',
-          color: done ? '#fff' : 'var(--muted)',
-          border: done ? 'none' : '2px solid var(--border)',
-        }}
-      >
-        {done ? '✓' : '›'}
-      </span>
-    </button>
-  );
-}
+// 순서가 아니라 지도처럼 흩어 놓은 섬 배치 (지도 영역 기준)
+const ISLANDS: { id: CategoryId; left: string; top: number; width: number }[] = [
+  { id: 'korean-history', left: '1%', top: 438, width: 150 },
+  { id: 'science', left: '50%', top: 322, width: 160 },
+  { id: 'world-history', left: '3%', top: 238, width: 128 },
+  { id: 'math', left: '52%', top: 160, width: 116 },
+  { id: 'music', left: '2%', top: 104, width: 108 },
+  { id: 'art', left: '36%', top: 20, width: 100 },
+  { id: 'current-affairs', left: '70%', top: 92, width: 92 },
+];
 
 export default function Home() {
-  const { state, dispatch } = useGame();
+  const { state } = useGame();
   const navigate = useNavigate();
   const save = state.save;
   const level = getLevel(save.totalPrize);
-  const levelFloor = LEVELS[level.level - 1].threshold;
   const growth = growthStageOf(level.level);
-  const nextGrowth = nextGrowthStage(level.level);
-  const today = todayString();
-  const pool = unlockedQuestions(save, ALL_QUESTIONS);
-  const bonusLeft = isDailyBonusEligible(save, today);
   const resume = nextStageAnywhere(save, save.lastPlayed?.category ?? null);
+  const resumeIsland = ISLANDS.find((i) => i.id === (resume?.category ?? 'korean-history'))!;
 
-  function startDaily() {
-    const questions = pickDailyQuestions(save, ALL_QUESTIONS, mulberry32(Date.now() & 0xffff));
-    if (questions.length === 0) return;
-    dispatch({ type: 'START_DAILY', questions });
-    navigate('/quiz');
-  }
+  const bubbleText = resume
+    ? resume.category === save.lastPlayed?.category
+      ? `${CATEGORY_BY_ID[resume.category].name} 섬 ${TIERS.indexOf(resume.tier) * 3 + resume.stage}단계부터!`
+      : `${CATEGORY_BY_ID[resume.category].name} 섬부터 시작해요`
+    : '모든 섬을 정복했어요!';
 
   return (
     <div className="screen">
-      {/* 상단 재화 */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
-        <button type="button" onClick={() => navigate('/profile')} style={{ ...pill, cursor: 'pointer' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+        <button type="button" className="pill puffy" onClick={() => navigate('/profile')}>
           <span
             style={{
-              background: 'var(--accent)', color: '#fff', borderRadius: 99,
-              padding: '2px 8px', fontSize: 12,
+              background: 'linear-gradient(180deg,#ffb89d,#ff8a65)', color: '#fff',
+              borderRadius: 99, padding: '2px 9px', fontSize: 12,
             }}
           >
             Lv.{level.level}
           </span>
           {growth.name}
         </button>
-        <span style={pill}>
-          <span aria-hidden style={{ fontSize: 18 }}>🪙</span>
+        <span className="pill puffy">
+          <Icon name="coin" size={22} />
           <span>{formatMoney(save.wallet)}</span>
         </span>
       </div>
 
-      {/* 캐릭터 무대 */}
+      <div style={{ margin: '0 4px 12px' }}>
+        <h1 style={{ fontSize: 22, margin: 0 }}>어느 섬으로 떠날까요?</h1>
+        <p className="muted" style={{ fontSize: 12, margin: '2px 0 0' }}>
+          섬마다 입문부터 상급까지 9단계 여정이 있어요 · {level.title}
+        </p>
+      </div>
+
       <div
         style={{
           position: 'relative',
-          borderRadius: 26,
+          height: 560,
+          borderRadius: 30,
           overflow: 'hidden',
-          background: 'linear-gradient(180deg, #cdeeff 0%, #eaf7ff 62%, #c8ecb4 62%, #b3e29a 100%)',
-          padding: '18px 16px 14px',
-          marginBottom: 12,
-          textAlign: 'center',
+          background: '#9fd6ee',
+          backgroundImage:
+            'radial-gradient(circle at 50% 50%, rgba(255,255,255,.28), transparent 70%), ' +
+            'radial-gradient(ellipse 14px 6px at 20px 16px, transparent 60%, rgba(214,240,250,.9) 62%, transparent 72%)',
+          backgroundSize: '100% 100%, 46px 30px',
+          boxShadow: 'inset 0 4px 14px rgba(255,255,255,.6)',
         }}
       >
-        <div
-          style={{
-            position: 'relative',
-            display: 'inline-block',
-            background: '#fff',
-            borderRadius: 16,
-            padding: '8px 14px',
-            fontSize: 13,
-            fontWeight: 800,
-            color: '#2b3a55',
-            boxShadow: '0 3px 0 rgba(0,0,0,0.06)',
-          }}
-        >
-          {pool.length === 0
-            ? '문제가 곧 도착해요!'
-            : bonusLeft
-              ? '오늘의 퀴즈 풀러 가요!'
-              : '오늘도 잘했어요. 한 판 더?'}
+        <Icon name="compass" size={40} style={{ position: 'absolute', left: 12, top: 12 }} />
+        <div className="drift" style={{ position: 'absolute', right: 14, top: 18, opacity: 0.9 }}>
+          <Icon name="cloud" size={64} />
         </div>
-        <div className="bob" style={{ margin: '6px auto 0', width: 150 }}>
-          <Penguin stage={growth.index} size={150} />
+        <div className="drift" style={{ position: 'absolute', left: '40%', top: 280, opacity: 0.8, animationDelay: '-3s' }}>
+          <Icon name="cloud" size={48} />
         </div>
-        <div style={{ fontSize: 13, fontWeight: 800, color: '#2b5a2a' }}>{level.title}</div>
-      </div>
+        <Icon name="boat" size={42} style={{ position: 'absolute', left: '40%', top: 410 }} />
 
-      {/* 성장 게이지 */}
-      <div style={{ ...card, padding: 14, marginBottom: 18 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
-          <b style={{ fontSize: 14 }}>성장 게이지</b>
-          <span className="muted" style={{ fontSize: 11 }}>
-            누적 <span style={{ fontWeight: 900, color: 'var(--text)' }}>{formatMoney(save.totalPrize)}</span>
-          </span>
-        </div>
-        <ProgressBar
-          value={save.totalPrize - levelFloor}
-          max={level.nextThreshold === null ? 1 : level.nextThreshold - levelFloor}
-        />
-        <div className="muted" style={{ fontSize: 11, marginTop: 6 }}>
-          {level.remaining === null
-            ? '최고 레벨이에요!'
-            : `다음 레벨까지 ${formatMoney(level.remaining)}`}
-          {nextGrowth && ` · 레벨 ${nextGrowth.fromLevel}이 되면 ${nextGrowth.name}(으)로 자라요`}
-        </div>
-      </div>
-
-      {/* 오늘의 퀘스트 */}
-      <h2 style={{ fontSize: 17, margin: '0 2px 10px' }}>오늘의 퀘스트</h2>
-      <div style={{ display: 'grid', gap: 8, marginBottom: 20 }}>
-        <QuestRow
-          icon="🎯"
-          iconBg="#fff1c7"
-          title={pool.length === 0 ? '문제 준비 중' : bonusLeft ? '오늘의 볼게임 시작 ▶' : '한 판 더 ▶'}
-          sub={bonusLeft ? '여러 카테고리 5문제 · 완료 보너스 30,000원' : '오늘 보너스는 받았어요 · 문제 상금은 그대로'}
-          done={!bonusLeft}
-          disabled={pool.length === 0}
-          onClick={startDaily}
-        />
-        <QuestRow
-          icon="🗺️"
-          iconBg="#dff3d4"
-          title={
-            resume
-              ? resume.category === save.lastPlayed?.category
-                ? `이어서 하기 · ${CATEGORY_BY_ID[resume.category].name} ${TIER_NAMES[resume.tier]} ${resume.stage}`
-                : `${CATEGORY_BY_ID[resume.category].name}부터 시작하기`
-              : '모든 스테이지를 깼어요'
-          }
-          sub="다음 스테이지로 모험을 이어가요"
-          disabled={!resume}
-          onClick={() => resume && navigate(`/category/${resume.category}`)}
-        />
-        <QuestRow
-          icon="📕"
-          iconBg="#ffe3e0"
-          title={`오답노트 복습 · ${save.wrongNotes.length}문제`}
-          sub="틀린 문제를 다시 맞히면 5,000원"
-          done={save.wrongNotes.length === 0}
-          onClick={() => navigate('/wrong-notes')}
-        />
-      </div>
-
-      {/* 카테고리 */}
-      <h2 style={{ fontSize: 17, margin: '0 2px 10px' }}>탐험할 카테고리</h2>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-        {CATEGORIES.map((c) => {
-          const done = clearedCount(save, c.id);
+        {ISLANDS.map((island) => {
+          const category = CATEGORY_BY_ID[island.id];
+          const hasQuestions = ALL_QUESTIONS.some((q) => q.category === island.id);
+          const done = clearedCount(save, island.id);
+          const isLast = save.lastPlayed?.category === island.id;
+          const landmark = Math.round(island.width * 0.42);
           return (
             <button
-              key={c.id}
+              key={island.id}
               type="button"
-              onClick={() => navigate(`/category/${c.id}`)}
-              style={{ ...card, padding: '14px 12px', textAlign: 'left' }}
+              onClick={() => navigate(`/category/${island.id}`)}
+              style={{
+                position: 'absolute',
+                left: island.left,
+                top: island.top,
+                width: island.width,
+                padding: 0,
+                border: 'none',
+                background: 'none',
+                opacity: hasQuestions ? 1 : 0.62,
+                filter: isLast ? 'drop-shadow(0 0 6px #fff) drop-shadow(0 0 2px #fff)' : 'none',
+              }}
             >
-              <div aria-hidden style={{ fontSize: 30, lineHeight: 1, marginBottom: 8 }}>{c.emoji}</div>
-              <div style={{ fontSize: 16, fontWeight: 900, marginBottom: 8 }}>{c.name}</div>
-              <ProgressBar value={done} max={9} />
-              <div className="muted" style={{ fontSize: 11, marginTop: 4 }}>클리어 {done}/9</div>
+              <IslandShape color={ISLAND_COLOR[island.id]} width={island.width} />
+              <span style={{ position: 'absolute', left: '50%', top: -landmark * 0.22, marginLeft: -landmark / 2 }}>
+                <Landmark category={island.id} size={landmark} />
+              </span>
+              <span
+                className="pill puffy"
+                style={{
+                  position: 'absolute', left: '50%', bottom: -6, transform: 'translateX(-50%)',
+                  padding: '2px 9px', fontSize: 11, whiteSpace: 'nowrap',
+                }}
+              >
+                {category.name}
+                {hasQuestions ? (
+                  done > 0 && <b style={{ color: '#e8a020' }}>★{done}</b>
+                ) : (
+                  <span className="muted" style={{ fontSize: 10 }}>준비 중</span>
+                )}
+              </span>
             </button>
           );
         })}
+
+        <div
+          className="bob"
+          style={{
+            position: 'absolute',
+            left: `calc(${resumeIsland.left} + ${resumeIsland.width * 0.62}px)`,
+            top: resumeIsland.top - 14,
+            pointerEvents: 'none',
+          }}
+        >
+          <Penguin stage={growth.index} size={50} outfit={save.settings.outfit} />
+        </div>
+        <button
+          type="button"
+          className="puffy"
+          onClick={() => resume && navigate(`/category/${resume.category}`)}
+          style={{
+            position: 'absolute',
+            left: `min(calc(${resumeIsland.left} + 4px), calc(100% - 196px))`,
+            top: Math.max(8, resumeIsland.top - 58),
+            border: 'none',
+            borderRadius: 14,
+            padding: '6px 8px 6px 11px',
+            fontSize: 11,
+            fontWeight: 900,
+            color: 'var(--text)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {bubbleText}
+          {resume && (
+            <span
+              style={{
+                background: 'linear-gradient(180deg,#ffb89d,#ff8a65)', color: '#fff',
+                borderRadius: 99, padding: '1px 8px', fontSize: 10,
+              }}
+            >
+              출발
+            </span>
+          )}
+        </button>
       </div>
 
       {state.storageWarning !== 'none' && (

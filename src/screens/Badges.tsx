@@ -30,7 +30,7 @@ export default function Badges() {
           const earned = Boolean(day);
           return (
             <div key={badge.id} style={{ textAlign: 'center' }}>
-              <Medal emoji={badge.emoji} group={badge.group} earned={earned} size={56} />
+              <Medal id={badge.id} group={badge.group} earned={earned} size={56} />
               <div
                 style={{
                   fontSize: 11, fontWeight: 800, marginTop: 6, lineHeight: 1.35,

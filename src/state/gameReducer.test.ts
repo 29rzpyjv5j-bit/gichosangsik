@@ -114,7 +114,7 @@ test('중간에 그만두면 기록이 남지 않지만 쓴 아이템 비용은 
   expect(s.save.stages).toEqual({});
 });
 
-test('볼게임을 끝내면 완료 횟수와 보너스 날짜가 기록된다', () => {
+test('섞어 풀기을 끝내면 완료 횟수와 보너스 날짜가 기록된다', () => {
   let s = initialAppState(makeSave(), 'none');
   s = gameReducer(s, { type: 'START_DAILY', questions: five() });
   s = playAll(s, [1, 1, 1, 0, 0]);
@@ -166,7 +166,7 @@ test('테마를 사면 지갑에서 빠지고 보유 목록에 들어간다', ()
 });
 
 test('이미 가진 테마를 다시 사지 않는다', () => {
-  let s = initialAppState(makeSave({ wallet: 500_000, owned: { themes: ['default', 'apricot'], avatars: ['smile'] } }), 'none');
+  let s = initialAppState(makeSave({ wallet: 500_000, owned: { themes: ['default', 'apricot'], avatars: ['smile'], furniture: [], outfits: [] } }), 'none');
   s = gameReducer(s, { type: 'BUY_THEME', theme: 'apricot' });
   expect(s.save.wallet).toBe(500_000);
 });
@@ -183,4 +183,58 @@ test('전체 초기화하면 기본 상태로 돌아간다', () => {
   expect(s.save.totalPrize).toBe(0);
   expect(s.save.wallet).toBe(0);
   expect(s.save.badges).toEqual([]);
+});
+
+test('가구를 사면 지갑에서 빠지고 해당 자리에 바로 놓인다', () => {
+  let s = initialAppState(makeSave({ wallet: 100_000, totalPrize: 300_000 }), 'none');
+  s = gameReducer(s, { type: 'BUY_FURNITURE', id: 'globe' });
+  expect(s.save.wallet).toBe(100_000 - 60_000);
+  expect(s.save.owned.furniture).toEqual(['globe']);
+  expect(s.save.settings.room.right).toBe('globe');
+  expect(s.save.totalPrize).toBe(300_000);
+});
+
+test('잔액이 모자라거나 이미 가진 가구는 사지 않는다', () => {
+  let s = initialAppState(makeSave({ wallet: 10_000 }), 'none');
+  s = gameReducer(s, { type: 'BUY_FURNITURE', id: 'globe' });
+  expect(s.save.owned.furniture).toEqual([]);
+  expect(s.save.wallet).toBe(10_000);
+});
+
+test('가진 가구만, 맞는 자리에만 놓을 수 있고 치울 수도 있다', () => {
+  let s = initialAppState(makeSave({ owned: { themes: ['default'], avatars: ['smile'], furniture: ['plant'], outfits: [] } }), 'none');
+  s = gameReducer(s, { type: 'PLACE_FURNITURE', slot: 'right', id: 'plant' });
+  expect(s.save.settings.room.right).toBeUndefined();
+  s = gameReducer(s, { type: 'PLACE_FURNITURE', slot: 'left', id: 'globe' });
+  expect(s.save.settings.room.left).toBeUndefined();
+  s = gameReducer(s, { type: 'PLACE_FURNITURE', slot: 'left', id: 'plant' });
+  expect(s.save.settings.room.left).toBe('plant');
+  s = gameReducer(s, { type: 'PLACE_FURNITURE', slot: 'left', id: null });
+  expect(s.save.settings.room.left).toBeUndefined();
+});
+
+test('레벨이 모자라면 가구를 살 수 없다', () => {
+  let s = initialAppState(makeSave({ wallet: 1_000_000, totalPrize: 0 }), 'none');
+  s = gameReducer(s, { type: 'BUY_FURNITURE', id: 'trophy' });
+  expect(s.save.owned.furniture).toEqual([]);
+  expect(s.save.wallet).toBe(1_000_000);
+});
+
+test('펭귄 소품을 사면 바로 입고, 가진 소품만 맞는 자리에 입거나 벗을 수 있다', () => {
+  let s = initialAppState(makeSave({ wallet: 100_000, totalPrize: 300_000 }), 'none');
+  s = gameReducer(s, { type: 'BUY_OUTFIT', id: 'beret' });
+  expect(s.save.wallet).toBe(70_000);
+  expect(s.save.settings.outfit.hat).toBe('beret');
+  s = gameReducer(s, { type: 'WEAR_OUTFIT', slot: 'neck', id: 'beret' });
+  expect(s.save.settings.outfit.neck).toBeUndefined();
+  s = gameReducer(s, { type: 'WEAR_OUTFIT', slot: 'neck', id: 'scarf' });
+  expect(s.save.settings.outfit.neck).toBeUndefined();
+  s = gameReducer(s, { type: 'WEAR_OUTFIT', slot: 'hat', id: null });
+  expect(s.save.settings.outfit.hat).toBeUndefined();
+});
+
+test('레벨이 모자라면 펭귄 소품을 살 수 없다', () => {
+  let s = initialAppState(makeSave({ wallet: 1_000_000, totalPrize: 0 }), 'none');
+  s = gameReducer(s, { type: 'BUY_OUTFIT', id: 'crown' });
+  expect(s.save.owned.outfits).toEqual([]);
 });

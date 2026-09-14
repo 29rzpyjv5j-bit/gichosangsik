@@ -36,7 +36,7 @@ async function enterQuiz(wallet = 0) {
       <GameProvider><App /></GameProvider>
     </MemoryRouter>,
   );
-  await userEvent.click(screen.getByRole('button', { name: /우리 몸/ }));
+  await userEvent.click(screen.getByRole('button', { name: '도전' }));
 }
 
 test('첫 문제와 보기 4개, 진행도가 보인다', async () => {

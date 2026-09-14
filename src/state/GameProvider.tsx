@@ -17,11 +17,6 @@ export function GameProvider({ children }: { children: ReactNode }) {
     saveSave(state.save);
   }, [state.save]);
 
-  useEffect(() => {
-    const theme = state.save.settings.theme;
-    if (theme === 'default') document.documentElement.removeAttribute('data-theme');
-    else document.documentElement.setAttribute('data-theme', theme);
-  }, [state.save.settings.theme]);
 
   return (
     <GameContext.Provider value={{ state, dispatch }}>{children}</GameContext.Provider>

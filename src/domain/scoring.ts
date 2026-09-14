@@ -66,7 +66,7 @@ export function dailyPrizeLines(args: {
   const { total, count } = correctPrizeTotal(args.questions, args.results, args.alreadyCorrect);
   const lines: PrizeLine[] = [];
   if (count > 0) lines.push({ label: `정답 ${count}개`, amount: total });
-  if (args.bonusEligible) lines.push({ label: '볼게임 완료 보너스', amount: DAILY_BONUS });
+  if (args.bonusEligible) lines.push({ label: '섞어 풀기 보너스', amount: DAILY_BONUS });
   return lines;
 }
 

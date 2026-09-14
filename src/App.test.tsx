@@ -17,5 +17,5 @@ test('홈 화면이 그려진다', () => {
       <GameProvider><App /></GameProvider>
     </MemoryRouter>,
   );
-  expect(screen.getByText(/문제 준비 중/)).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: '어느 섬으로 떠날까요?' })).toBeInTheDocument();
 });
