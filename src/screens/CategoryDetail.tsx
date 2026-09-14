@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useGame } from '../state/GameProvider';
 import { CATEGORY_BY_ID } from '../data/categories';
@@ -57,6 +57,12 @@ export default function CategoryDetail() {
   const current = category ? nextStage(save, category.id) : null;
   const currentIndex = current ? TIERS.indexOf(current.tier) * 3 + current.stage - 1 : 8;
   const [selected, setSelected] = useState(currentIndex);
+  const currentRef = useRef<HTMLButtonElement>(null);
+
+  // 들어오면 현재 내 위치(펭귄이 있는 단계)가 화면 가운데 오도록
+  useEffect(() => {
+    currentRef.current?.scrollIntoView?.({ block: 'center' });
+  }, [categoryId]);
 
   if (!category) {
     return (
@@ -186,6 +192,7 @@ export default function CategoryDetail() {
           return (
             <button
               key={i}
+              ref={i === currentIndex ? currentRef : undefined}
               type="button"
               aria-label={`${i + 1}단계 ${node.title}`}
               aria-pressed={selected === i}
