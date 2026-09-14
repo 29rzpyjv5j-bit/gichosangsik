@@ -1,22 +1,33 @@
 import { useNavigate } from 'react-router-dom';
 import { useGame } from '../state/GameProvider';
 import { getLevel } from '../domain/level';
-import { nextStageAnywhere } from '../domain/unlock';
+import { clearedCount, nextStageAnywhere } from '../domain/unlock';
 import {
   isDailyBonusEligible, mulberry32, pickDailyQuestions, todayString, unlockedQuestions,
 } from '../domain/dailyGame';
 import { ALL_QUESTIONS } from '../data/questions';
 import { CATEGORIES, CATEGORY_BY_ID } from '../data/categories';
+import { LEVELS } from '../data/levels';
 import { AVATARS } from '../data/shop';
 import { TIER_NAMES } from '../types';
 import { formatMoney } from '../components/Money';
 import { ThickButton } from '../components/ThickButton';
+import { ProgressBar } from '../components/ProgressBar';
+
+const cardStyle = {
+  border: '2px solid var(--border)',
+  borderBottomWidth: 4,
+  borderRadius: 16,
+  background: 'var(--surface)',
+  color: 'var(--text)',
+} as const;
 
 export default function Home() {
   const { state, dispatch } = useGame();
   const navigate = useNavigate();
   const save = state.save;
   const level = getLevel(save.totalPrize);
+  const levelFloor = LEVELS[level.level - 1].threshold;
   const today = todayString();
   const pool = unlockedQuestions(save, ALL_QUESTIONS);
   const bonusLeft = isDailyBonusEligible(save, today);
@@ -37,19 +48,59 @@ export default function Home() {
 
   return (
     <div className="screen">
-      <header style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-        <span style={{ fontSize: 30 }}>{avatar}</span>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontWeight: 900 }}>
-            Lv.{level.level} {level.title}
+      {/* 프로필 카드 */}
+      <button
+        type="button"
+        aria-label="프로필·설정"
+        onClick={() => navigate('/profile')}
+        style={{ ...cardStyle, width: '100%', padding: 16, marginBottom: 14, textAlign: 'left' }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <span
+            aria-hidden
+            style={{
+              width: 56, height: 56, borderRadius: '50%', flex: '0 0 auto',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 34, background: 'var(--ok-bg)',
+            }}
+          >
+            {avatar}
+          </span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 900, color: 'var(--accent)' }}>
+              Lv.{level.level}
+            </div>
+            <div style={{ fontSize: 19, fontWeight: 900, marginBottom: 6 }}>{level.title}</div>
+            <ProgressBar
+              value={save.totalPrize - levelFloor}
+              max={level.nextThreshold === null ? 1 : level.nextThreshold - levelFloor}
+            />
+            <div className="muted" style={{ fontSize: 11, marginTop: 4 }}>
+              {level.remaining === null
+                ? '최고 레벨이에요'
+                : `다음 레벨까지 ${formatMoney(level.remaining)}`}
+            </div>
           </div>
-          <div className="muted" style={{ fontSize: 12 }}>
-            누적 <span>{formatMoney(save.totalPrize)}</span> · 지갑 <span>{formatMoney(save.wallet)}</span>
+          <span aria-hidden className="muted" style={{ fontSize: 22 }}>›</span>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 14 }}>
+          <div style={{ background: 'var(--bg)', borderRadius: 10, padding: '8px 10px' }}>
+            <div className="muted" style={{ fontSize: 11 }}>누적 상금</div>
+            <div style={{ fontSize: 16, fontWeight: 900 }}>
+              <span>{formatMoney(save.totalPrize)}</span>
+            </div>
+          </div>
+          <div style={{ background: 'var(--bg)', borderRadius: 10, padding: '8px 10px' }}>
+            <div className="muted" style={{ fontSize: 11 }}>지갑</div>
+            <div style={{ fontSize: 16, fontWeight: 900, color: 'var(--accent)' }}>
+              <span>{formatMoney(save.wallet)}</span>
+            </div>
           </div>
         </div>
-      </header>
+      </button>
 
-      <div style={{ marginBottom: 16 }}>
+      {/* 오늘의 볼게임 */}
+      <div style={{ marginBottom: 12 }}>
         <ThickButton accent onClick={startDaily} disabled={pool.length === 0}>
           {pool.length === 0
             ? '문제 준비 중'
@@ -64,7 +115,7 @@ export default function Home() {
         </p>
       </div>
 
-      <div style={{ display: 'grid', gap: 8, marginBottom: 18 }}>
+      <div style={{ marginBottom: 20 }}>
         <ThickButton onClick={startResume}>
           {resume
             ? resume.category === save.lastPlayed?.category
@@ -72,53 +123,46 @@ export default function Home() {
               : `${CATEGORY_BY_ID[resume.category].name}부터 시작하기`
             : '모든 스테이지를 깼어요'}
         </ThickButton>
-        <ThickButton onClick={() => navigate('/badges')}>
-          뱃지 · {save.badges.length}개
-        </ThickButton>
-        <ThickButton onClick={() => navigate('/wrong-notes')}>
-          오답노트 · {save.wrongNotes.length}문제
-        </ThickButton>
-        <ThickButton onClick={() => navigate('/shop')}>상점</ThickButton>
       </div>
 
-      <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 14 }}>
-        {CATEGORIES.map((c) => (
+      {/* 카테고리 그리드 */}
+      <h2 style={{ fontSize: 17, margin: '0 2px 10px' }}>카테고리</h2>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 20 }}>
+        {CATEGORIES.map((c) => {
+          const done = clearedCount(save, c.id);
+          return (
+            <button
+              key={c.id}
+              type="button"
+              onClick={() => navigate(`/category/${c.id}`)}
+              style={{ ...cardStyle, padding: '14px 12px', textAlign: 'left' }}
+            >
+              <div aria-hidden style={{ fontSize: 30, lineHeight: 1, marginBottom: 8 }}>{c.emoji}</div>
+              <div style={{ fontSize: 16, fontWeight: 900, marginBottom: 8 }}>{c.name}</div>
+              <ProgressBar value={done} max={9} />
+              <div className="muted" style={{ fontSize: 11, marginTop: 4 }}>클리어 {done}/9</div>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* 뱃지·오답노트·상점 */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+        {[
+          { to: '/badges', emoji: '🏅', label: `뱃지 ${save.badges.length}개` },
+          { to: '/wrong-notes', emoji: '📕', label: `오답노트 ${save.wrongNotes.length}문제` },
+          { to: '/shop', emoji: '🛍️', label: '상점' },
+        ].map((item) => (
           <button
-            key={c.id}
+            key={item.to}
             type="button"
-            onClick={() => navigate(`/category/${c.id}`)}
-            style={{
-              whiteSpace: 'nowrap',
-              border: '2px solid var(--border)',
-              background: 'var(--surface)',
-              borderRadius: 99,
-              padding: '7px 12px',
-              fontSize: 12,
-              fontWeight: 700,
-            }}
+            onClick={() => navigate(item.to)}
+            style={{ ...cardStyle, padding: '12px 4px', textAlign: 'center' }}
           >
-            {c.emoji} {c.name}
+            <div aria-hidden style={{ fontSize: 24 }}>{item.emoji}</div>
+            <div style={{ fontSize: 12, fontWeight: 800, marginTop: 4 }}>{item.label}</div>
           </button>
         ))}
-      </div>
-
-      <div style={{ display: 'flex', gap: 14, fontSize: 12 }}>
-        <button
-          type="button"
-          className="muted"
-          style={{ background: 'none', border: 'none', padding: 0 }}
-          onClick={() => navigate('/categories')}
-        >
-          카테고리 전체 보기
-        </button>
-        <button
-          type="button"
-          className="muted"
-          style={{ background: 'none', border: 'none', padding: 0 }}
-          onClick={() => navigate('/profile')}
-        >
-          프로필·설정
-        </button>
       </div>
 
       {state.storageWarning !== 'none' && (
