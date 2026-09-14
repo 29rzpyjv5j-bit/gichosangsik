@@ -154,7 +154,15 @@ export default function Quiz() {
           </button>
         </>
       ) : (
-        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+        <>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '4px 2px 8px' }}>
+          <span className="muted" style={{ fontSize: 12, fontWeight: 900 }}>아이템</span>
+          <span className="pill puffy" style={{ padding: '3px 10px 3px 4px', fontSize: 12 }}>
+            <Icon name="coin" size={20} />
+            <span>{formatMoney(state.save.wallet)}</span>
+          </span>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
           {ITEMS.map((item) => {
             const alreadyUsed = used.includes(item);
             return (
@@ -174,12 +182,8 @@ export default function Quiz() {
               </button>
             );
           })}
-          <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--accent)', width: 72 }}>
-            지갑
-            <br />
-            {formatMoney(state.save.wallet)}
-          </span>
         </div>
+        </>
       )}
     </div>
   );
