@@ -1,6 +1,6 @@
-import type { CategoryId, SaveState, StageNo, Tier } from '../types';
+import type { CategoryId, SaveState, Tier } from '../types';
 import { CATEGORIES } from './categories';
-import { clearedCount, isStageCleared } from '../domain/unlock';
+import { clearedCount, isStageCleared, stagesOf, totalStages } from '../domain/unlock';
 import { getLevel } from '../domain/level';
 
 export type BadgeGroup = 'category' | 'tier' | 'perfect' | 'wrong' | 'daily' | 'level';
@@ -23,16 +23,15 @@ export const BADGE_GRADIENT: Record<BadgeGroup, string> = {
   level: 'linear-gradient(160deg, #c3a6f5, #8b6fd6)',
 };
 
-const STAGES: StageNo[] = [1, 2, 3];
 
 function tierClearedEverywhere(s: SaveState, tier: Tier): boolean {
-  return CATEGORIES.every((c) => STAGES.every((n) => isStageCleared(s, c.id, tier, n)));
+  return CATEGORIES.every((c) => stagesOf(c.id, tier).every((n) => isStageCleared(s, c.id, tier, n)));
 }
 
 function tierClearedCount(s: SaveState, tier: Tier): number {
   let n = 0;
   for (const c of CATEGORIES) {
-    for (const st of STAGES) if (isStageCleared(s, c.id, tier, st)) n += 1;
+    for (const st of stagesOf(c.id, tier)) if (isStageCleared(s, c.id, tier, st)) n += 1;
   }
   return n;
 }
@@ -42,8 +41,8 @@ const categoryBadges: Badge[] = CATEGORIES.map((c) => ({
   name: `${c.name} 마스터`,
   emoji: c.emoji,
   group: 'category' as BadgeGroup,
-  earned: (s: SaveState) => clearedCount(s, c.id as CategoryId) === 9,
-  progress: (s: SaveState) => `클리어 ${clearedCount(s, c.id as CategoryId)}/9`,
+  earned: (s: SaveState) => clearedCount(s, c.id as CategoryId) === totalStages(c.id),
+  progress: (s: SaveState) => `클리어 ${clearedCount(s, c.id as CategoryId)}/${totalStages(c.id)}`,
 }));
 
 const tierMeta: { tier: Tier; id: string; name: string; emoji: string }[] = [
@@ -58,7 +57,7 @@ const tierBadges: Badge[] = tierMeta.map((m) => ({
   emoji: m.emoji,
   group: 'tier' as BadgeGroup,
   earned: (s: SaveState) => tierClearedEverywhere(s, m.tier),
-  progress: (s: SaveState) => `클리어 ${tierClearedCount(s, m.tier)}/21`,
+  progress: (s: SaveState) => `클리어 ${tierClearedCount(s, m.tier)}/${CATEGORIES.reduce((n, c) => n + stagesOf(c.id, m.tier).length, 0)}`,
 }));
 
 const perfectBadges: Badge[] = [

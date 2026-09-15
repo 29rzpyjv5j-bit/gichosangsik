@@ -1,11 +1,10 @@
 import { useNavigate } from 'react-router-dom';
 import { useGame } from '../state/GameProvider';
 import { getLevel } from '../domain/level';
-import { clearedCount, nextStageAnywhere } from '../domain/unlock';
+import { clearedCount, nextStageAnywhere, stageNumber } from '../domain/unlock';
 import { growthStageOf } from '../domain/growth';
 import { ALL_QUESTIONS } from '../data/questions';
 import { CATEGORY_BY_ID } from '../data/categories';
-import { TIERS } from '../types';
 import type { CategoryId } from '../types';
 import { formatMoney } from '../components/Money';
 import { Penguin } from '../components/Penguin';
@@ -33,7 +32,7 @@ export default function Home() {
 
   const bubbleText = resume
     ? resume.category === save.lastPlayed?.category
-      ? `${CATEGORY_BY_ID[resume.category].name} 섬 ${TIERS.indexOf(resume.tier) * 3 + resume.stage}단계부터!`
+      ? `${CATEGORY_BY_ID[resume.category].name} 섬 ${stageNumber(resume.category, resume.tier, resume.stage)}단계부터!`
       : `${CATEGORY_BY_ID[resume.category].name} 섬부터 시작해요`
     : '모든 섬을 정복했어요!';
 
@@ -60,7 +59,7 @@ export default function Home() {
       <div style={{ margin: '0 4px 12px' }}>
         <h1 style={{ fontSize: 22, margin: 0 }}>어느 섬으로 떠날까요?</h1>
         <p className="muted" style={{ fontSize: 12, margin: '2px 0 0' }}>
-          섬마다 입문부터 상급까지 9단계 여정이 있어요 · {level.title}
+          섬마다 입문부터 상급까지 단계별 여정이 있어요 · {level.title}
         </p>
       </div>
 

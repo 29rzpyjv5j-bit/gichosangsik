@@ -5,6 +5,7 @@ import { GameProvider } from '../state/GameProvider';
 import { saveSave } from '../storage/save';
 import { makeSave } from '../test/factories';
 import { stageKey, TIERS } from '../types';
+import { stagesOf } from '../domain/unlock';
 import App from '../App';
 
 vi.mock('../data/questions', () => {
@@ -70,7 +71,7 @@ test('마지막으로 플레이한 섬은 다음 단계를 가리킨다', () => 
 test('마지막 섬을 다 깼으면 다음 섬으로 넘어간다', () => {
   const stages: Record<string, { cleared: boolean; bestCorrect: number; plays: number }> = {};
   for (const tier of TIERS) {
-    for (const stage of [1, 2, 3] as const) {
+    for (const stage of stagesOf('korean-history', tier)) {
       stages[stageKey('korean-history', tier, stage)] = { cleared: true, bestCorrect: 3, plays: 1 };
     }
   }

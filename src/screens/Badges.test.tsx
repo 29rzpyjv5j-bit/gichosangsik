@@ -38,8 +38,9 @@ test('미획득 뱃지에 진행률이 붙는다', () => {
   expect(screen.getByText('3/10')).toBeInTheDocument();
   expect(screen.getByText('9/30')).toBeInTheDocument();
   expect(screen.getByText('남은 오답 2개')).toBeInTheDocument();
-  // 카테고리 마스터 7개가 모두 같은 문구를 쓴다
-  expect(screen.getAllByText('클리어 0/9')).toHaveLength(7);
+  // 문제은행을 들인 한국사·세계사는 129단계, 나머지는 9단계
+  expect(screen.getAllByText('클리어 0/9')).toHaveLength(5);
+  expect(screen.getAllByText('클리어 0/129')).toHaveLength(2);
 });
 
 test('획득한 뱃지는 획득일을 보여준다', () => {

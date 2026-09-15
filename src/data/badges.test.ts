@@ -1,14 +1,15 @@
 import { BADGES, BADGE_GRADIENT } from './badges';
 import { makeSave } from '../test/factories';
 import { stageKey, TIERS } from '../types';
-import type { CategoryId, SaveState, StageNo } from '../types';
+import type { CategoryId, SaveState } from '../types';
+import { stagesOf } from '../domain/unlock';
 import { CATEGORIES } from './categories';
 
 function clearAll(categories: CategoryId[], tiers = TIERS): SaveState {
   const stages: SaveState['stages'] = {};
   for (const c of categories) {
     for (const t of tiers) {
-      for (const s of [1, 2, 3] as StageNo[]) {
+      for (const s of stagesOf(c, t)) {
         stages[stageKey(c, t, s)] = { cleared: true, bestCorrect: 5, plays: 1 };
       }
     }

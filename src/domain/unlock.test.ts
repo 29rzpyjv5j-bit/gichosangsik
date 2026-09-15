@@ -53,9 +53,10 @@ test('클리어 개수를 0~9로 센다', () => {
 });
 
 test('잠긴 단계의 해금 조건 문구', () => {
-  expect(tierUnlockHint('mid')).toBe('입문 3스테이지를 모두 깨면 열립니다');
-  expect(tierUnlockHint('advanced')).toBe('중급 3스테이지를 모두 깨면 열립니다');
-  expect(tierUnlockHint('basic')).toBe('처음부터 열려 있습니다');
+  expect(tierUnlockHint('science', 'mid')).toBe('입문 3스테이지를 모두 깨면 열립니다');
+  expect(tierUnlockHint('science', 'advanced')).toBe('중급 3스테이지를 모두 깨면 열립니다');
+  expect(tierUnlockHint('korean-history', 'mid')).toBe('입문 23스테이지를 모두 깨면 열립니다');
+  expect(tierUnlockHint('science', 'basic')).toBe('처음부터 열려 있습니다');
 });
 
 test('카테고리에서 도전 가능한 다음 스테이지를 찾는다', () => {

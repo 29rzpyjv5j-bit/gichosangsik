@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useGame } from '../state/GameProvider';
 import { CATEGORIES } from '../data/categories';
-import { clearedCount } from '../domain/unlock';
+import { clearedCount, totalStages } from '../domain/unlock';
 import { ProgressBar } from '../components/ProgressBar';
 import { Landmark } from '../components/Icons';
 
@@ -35,9 +35,9 @@ export default function Categories() {
               <Landmark category={c.id} size={34} />
               <span style={{ flex: 1 }}>
                 <span style={{ display: 'block', marginBottom: 4 }}>{c.name}</span>
-                <ProgressBar value={done} max={9} />
+                <ProgressBar value={done} max={totalStages(c.id)} />
               </span>
-              <span className="muted" style={{ fontSize: 11 }}>{done}/9</span>
+              <span className="muted" style={{ fontSize: 11 }}>{done}/{totalStages(c.id)}</span>
             </button>
           );
         })}

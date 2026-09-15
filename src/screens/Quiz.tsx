@@ -162,8 +162,8 @@ export default function Quiz() {
             <span>{formatMoney(state.save.wallet)}</span>
           </span>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
-          {ITEMS.map((item) => {
+        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${q.hint ? 3 : 2}, 1fr)`, gap: 8 }}>
+          {ITEMS.filter((item) => item !== 'hint' || q.hint).map((item) => {
             const alreadyUsed = used.includes(item);
             return (
               <button

@@ -4,32 +4,55 @@ import { useGame } from '../state/GameProvider';
 import { CATEGORY_BY_ID } from '../data/categories';
 import { questionsOfStage } from '../data/questions';
 import {
-  clearedCount, isStageCleared, isStageUnlocked, isTierUnlocked, nextStage, tierUnlockHint,
+  clearedCount, isStageCleared, isStageUnlocked, isTierUnlocked, nextStage, stageNumber, stagesOf,
+  tierUnlockHint, totalStages,
 } from '../domain/unlock';
 import { growthStageOf } from '../domain/growth';
 import { getLevel } from '../domain/level';
 import { TIERS, TIER_NAMES, stageKey } from '../types';
-import type { CategoryId, StageNo, Tier } from '../types';
+import type { CategoryId, Tier } from '../types';
 import { formatMoney } from '../components/Money';
 import { ProgressBar } from '../components/ProgressBar';
 import { Penguin } from '../components/Penguin';
 import { Icon, Landmark } from '../components/Icons';
 
-const STAGES: StageNo[] = [1, 2, 3];
-const MAP_HEIGHT = 700;
+const ROW = 66; // 노드 사이 세로 간격
+const TIER_GAP = 70; // 단계(입문/중급/상급) 사이에 상자와 이름표가 들어갈 틈
+const TOP_PAD = 80;
+const BOTTOM_PAD = 60;
+const ZONE_META: Record<Tier, { icon: 'sprout' | 'tree' | 'mount'; label: string; bg: string }> = {
+  basic: { icon: 'sprout', label: '입문 들판', bg: 'linear-gradient(180deg,#dcf3d0,#c7ebb6)' },
+  mid: { icon: 'tree', label: '중급 숲', bg: 'linear-gradient(180deg,#fff1d6,#ffe2b8)' },
+  advanced: { icon: 'mount', label: '상급 설산', bg: 'linear-gradient(180deg,#f3eefc,#e7ddfb)' },
+};
 
-// 아래(1단계)에서 위(9단계)로 올라가는 노드 위치: x는 %, y는 px
-const NODE_POS: [number, number][] = [
-  [24, 620], [70, 566], [30, 494],
-  [68, 380], [26, 322], [70, 262],
-  [30, 150], [66, 100], [42, 34],
-];
-const CHEST_POS: [number, number][] = [[50, 436], [48, 208]];
-const ZONES: { tier: Tier; icon: 'sprout' | 'tree' | 'mount'; label: string; top: number; side: 'left' | 'right' }[] = [
-  { tier: 'basic', icon: 'sprout', label: '입문 들판', top: 660, side: 'right' },
-  { tier: 'mid', icon: 'tree', label: '중급 숲', top: 430, side: 'right' },
-  { tier: 'advanced', icon: 'mount', label: '상급 설산', top: 206, side: 'left' },
-];
+// 스테이지 수에 맞춰 아래(1단계)에서 위로 구불구불 올라가는 배치를 만든다
+function layout(counts: number[]) {
+  const nodes: [number, number][] = [];
+  const zones: { top: number; bottom: number }[] = [];
+  const chests: number[] = [];
+  const total = counts.reduce((a, b) => a + b, 0);
+  const height = TOP_PAD + BOTTOM_PAD + (total - 1) * ROW + TIER_GAP * (counts.length - 1);
+  let y = height - BOTTOM_PAD;
+  let bottom = height;
+  let i = 0;
+  counts.forEach((count, t) => {
+    for (let k = 0; k < count; k++) {
+      if (k > 0) y -= ROW;
+      nodes.push([50 + 25 * Math.sin(i * 1.05), y]);
+      i += 1;
+    }
+    const last = t === counts.length - 1;
+    const top = last ? 0 : y - (TIER_GAP + ROW) / 2;
+    zones.push({ top, bottom });
+    if (!last) {
+      chests.push(top);
+      bottom = top;
+      y -= TIER_GAP + ROW;
+    }
+  });
+  return { nodes, zones, chests, height };
+}
 
 // 노드들을 부드럽게 잇는 길 (Catmull-Rom → 베지어)
 function pathThrough(points: [number, number][]): string {
@@ -55,7 +78,8 @@ export default function CategoryDetail() {
   const save = state.save;
 
   const current = category ? nextStage(save, category.id) : null;
-  const currentIndex = current ? TIERS.indexOf(current.tier) * 3 + current.stage - 1 : 8;
+  const total = category ? totalStages(category.id) : 0;
+  const currentIndex = current && category ? stageNumber(category.id, current.tier, current.stage) - 1 : total - 1;
   const [selected, setSelected] = useState(currentIndex);
   const currentRef = useRef<HTMLButtonElement>(null);
 
@@ -73,7 +97,7 @@ export default function CategoryDetail() {
     );
   }
 
-  const nodes = TIERS.flatMap((tier) => STAGES.map((stage) => {
+  const nodes = TIERS.flatMap((tier) => stagesOf(category.id, tier).map((stage) => {
     const open = isStageUnlocked(save, category.id, tier, stage);
     const cleared = isStageCleared(save, category.id, tier, stage);
     const record = save.stages[stageKey(category.id, tier, stage)];
@@ -82,7 +106,7 @@ export default function CategoryDetail() {
     if (!open) {
       status = isTierUnlocked(save, category.id, tier)
         ? '앞 스테이지를 깨면 열립니다'
-        : tierUnlockHint(tier);
+        : tierUnlockHint(category.id, tier);
     } else if (count === 0) status = '문제 준비 중';
     else if (cleared) status = `클리어 · 최고 ${record?.bestCorrect ?? 0}/5`;
     else status = `${count}문제 · 도전 가능`;
@@ -95,7 +119,9 @@ export default function CategoryDetail() {
     };
   }));
 
-  const pick = nodes[selected];
+  const pick = nodes[selected] ?? nodes[0];
+  const map = layout(TIERS.map((t) => stagesOf(category.id, t).length));
+  const pathD = pathThrough(map.nodes);
   const growth = growthStageOf(getLevel(save.totalPrize).level);
 
   function start() {
@@ -121,10 +147,10 @@ export default function CategoryDetail() {
           <Landmark category={category.id} size={30} />
           <div style={{ flex: 1 }}>
             <h2 style={{ fontSize: 15, margin: 0 }}>{category.name} 섬</h2>
-            <ProgressBar value={clearedCount(save, category.id)} max={9} />
+            <ProgressBar value={clearedCount(save, category.id)} max={total} />
           </div>
           <span className="muted" style={{ fontSize: 11, fontWeight: 900 }}>
-            {clearedCount(save, category.id)}/9
+            {clearedCount(save, category.id)}/{total}
           </span>
         </div>
         <span className="pill puffy" style={{ padding: '4px 10px 4px 5px' }}>
@@ -136,52 +162,66 @@ export default function CategoryDetail() {
       <div
         style={{
           position: 'relative',
-          height: MAP_HEIGHT,
+          height: map.height,
           borderRadius: 30,
           overflow: 'hidden',
-          background: 'linear-gradient(180deg,#f3eefc 0%,#e7ddfb 32%,#fff1d6 32%,#ffe2b8 64%,#dcf3d0 64%,#c7ebb6 100%)',
         }}
       >
+        {TIERS.map((tier, t) => (
+          <div
+            key={tier}
+            aria-hidden
+            style={{ position: 'absolute', left: 0, right: 0, top: map.zones[t].top, height: map.zones[t].bottom - map.zones[t].top, background: ZONE_META[tier].bg }}
+          />
+        ))}
         <svg
           aria-hidden
-          viewBox={`0 0 330 ${MAP_HEIGHT}`}
+          viewBox={`0 0 330 ${map.height}`}
           preserveAspectRatio="none"
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
         >
           <path d="M0 150L60 90L110 130L170 60L240 120L290 80L330 140V224H0Z" fill="#fff" opacity=".8" />
-          <path d={pathThrough(NODE_POS)} fill="none" stroke="#fffaf0" strokeWidth="30" strokeLinecap="round" />
-          <path d={pathThrough(NODE_POS)} fill="none" stroke="#ecc98f" strokeWidth="3" strokeDasharray="2 12" strokeLinecap="round" />
+          <path d={pathD} fill="none" stroke="#fffaf0" strokeWidth="30" strokeLinecap="round" />
+          <path d={pathD} fill="none" stroke="#ecc98f" strokeWidth="3" strokeDasharray="2 12" strokeLinecap="round" />
         </svg>
-        <Icon name="tree" size={42} style={{ position: 'absolute', left: 8, top: 300, opacity: 0.7 }} />
-        <Icon name="tree" size={36} style={{ position: 'absolute', right: 12, top: 470, opacity: 0.7 }} />
-        <Icon name="sprout" size={32} style={{ position: 'absolute', left: 14, top: 540 }} />
+        {map.nodes.map(([x, y], i) => i % 4 === 2 && (
+          <Icon
+            key={`deco-${i}`}
+            name={nodes[i].tier === 'basic' ? 'sprout' : nodes[i].tier === 'mid' ? 'tree' : 'mount'}
+            size={34}
+            style={{ position: 'absolute', top: y - 4, [x > 50 ? 'left' : 'right']: 10, opacity: 0.7 }}
+          />
+        ))}
 
-        {ZONES.map((z) => (
+        {TIERS.map((tier, t) => (
           <span
-            key={z.tier}
+            key={tier}
             className="pill puffy"
-            style={{ position: 'absolute', top: z.top, [z.side]: 10, padding: '3px 10px 3px 5px', fontSize: 11 }}
+            style={{
+              position: 'absolute', top: map.zones[t].bottom - 40,
+              [t % 2 === 0 ? 'right' : 'left']: 10, padding: '3px 10px 3px 5px', fontSize: 11,
+            }}
           >
-            <Icon name={z.icon} size={18} />
-            {z.label}
+            <Icon name={ZONE_META[tier].icon} size={18} />
+            {ZONE_META[tier].label}
           </span>
         ))}
 
-        {CHEST_POS.map(([x, y], i) => {
+        {map.chests.map((y, i) => {
           const tier = TIERS[i];
-          const done = STAGES.every((s) => isStageCleared(save, category.id, tier, s));
+          const done = stagesOf(category.id, tier).every((s) => isStageCleared(save, category.id, tier, s));
           return (
-            <span key={tier} style={{ position: 'absolute', left: `${x}%`, top: y, marginLeft: -22 }}>
+            <span key={tier} style={{ position: 'absolute', left: '50%', top: y - 22, marginLeft: -22 }}>
               <Icon name={done ? 'party' : 'gift'} size={44} />
             </span>
           );
         })}
-        <span style={{ position: 'absolute', left: '62%', top: 20 }}>
+        <span style={{ position: 'absolute', left: '62%', top: 14 }}>
           <Icon name="flag" size={40} />
         </span>
 
         {nodes.map((node, i) => {
-          const [x, y] = NODE_POS[i];
+          const [x, y] = map.nodes[i];
           const isCurrent = current !== null && i === currentIndex;
           const size = isCurrent ? 60 : 52;
           const bg = node.cleared
@@ -224,8 +264,8 @@ export default function CategoryDetail() {
             className="bob"
             style={{
               position: 'absolute', pointerEvents: 'none',
-              left: `calc(${NODE_POS[currentIndex][0]}% ${NODE_POS[currentIndex][0] > 50 ? '-' : '+'} 34px)`,
-              top: NODE_POS[currentIndex][1] - 10, marginLeft: -26,
+              left: `calc(${map.nodes[currentIndex][0]}% ${map.nodes[currentIndex][0] > 50 ? '-' : '+'} 34px)`,
+              top: map.nodes[currentIndex][1] - 10, marginLeft: -26,
             }}
           >
             <Penguin stage={growth.index} size={52} outfit={save.settings.outfit} />
@@ -253,7 +293,7 @@ export default function CategoryDetail() {
                 : 'radial-gradient(circle at 32% 28%,#fff,#e6def5 60%,#cdc0e6)',
           }}
         >
-          {pick.open ? selected + 1 : <Icon name="lock" size={26} />}
+          {pick.open ? stageNumber(category.id, pick.tier, pick.stage) : <Icon name="lock" size={26} />}
         </span>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div className="muted" style={{ fontSize: 10, fontWeight: 900 }}>

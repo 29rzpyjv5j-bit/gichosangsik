@@ -1,7 +1,6 @@
 import type { CategoryId, Question, StageNo } from '../../types';
 import { TIERS } from '../../types';
-
-const STAGES: StageNo[] = [1, 2, 3];
+import { CATEGORY_BY_ID } from '../categories';
 const WRITTEN_AT = /^\d{4}-\d{2}$/;
 
 export function validateQuestions(questions: Question[], category: CategoryId): string[] {
@@ -30,7 +29,6 @@ export function validateQuestions(questions: Question[], category: CategoryId): 
     if (new Set(q.choices).size !== q.choices.length) errors.push(`${at} 보기 중복`);
 
     if (q.prompt.trim() === '') errors.push(`${at} 문항이 비어 있음`);
-    if (q.hint.trim() === '') errors.push(`${at} 힌트가 비어 있음`);
     if (q.explanation.trim() === '') errors.push(`${at} 해설이 비어 있음`);
 
     const answer = q.choices[q.answerIndex];
@@ -52,7 +50,10 @@ export function validateQuestions(questions: Question[], category: CategoryId): 
   }
 
   for (const tier of TIERS) {
-    for (const stage of STAGES) {
+    const stages: StageNo[] = CATEGORY_BY_ID[category].stageTitles[tier].map((_, i) => i + 1);
+    const outOfRange = questions.filter((q) => q.tier === tier && !stages.includes(q.stage));
+    if (outOfRange.length > 0) errors.push(`${category}-${tier} 제목 없는 스테이지 번호: ${outOfRange[0].stage}`);
+    for (const stage of stages) {
       const n = questions.filter((q) => q.tier === tier && q.stage === stage).length;
       if (n !== 5) {
         errors.push(`${category}-${tier}-${stage} 문제 수가 5개가 아님 (현재 ${n})`);

@@ -83,6 +83,8 @@ function isItemBlockedByState(s: QuizSession, item: ItemId): boolean {
   if (isFinished(s) || s.revealed) return true;
   if ((s.usedItems[s.index] ?? []).includes(item)) return true;
   if (item === 'half' && currentQuestion(s).type === 'ox') return true;
+  // 힌트가 없는 문제(들여온 문제은행)에서는 힌트를 팔지 않는다
+  if (item === 'hint' && !currentQuestion(s).hint) return true;
   return false;
 }
 

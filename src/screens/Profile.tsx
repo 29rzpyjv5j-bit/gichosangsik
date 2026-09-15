@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGame } from '../state/GameProvider';
 import { getLevel } from '../domain/level';
-import { clearedCount } from '../domain/unlock';
+import { clearedCount, totalStages } from '../domain/unlock';
 import { GROWTH_STAGES, growthStageOf, nextGrowthStage } from '../domain/growth';
 import { CATEGORIES } from '../data/categories';
 import { formatMoney } from '../components/Money';
@@ -97,7 +97,7 @@ export default function Profile() {
             <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
               <Landmark category={c.id} size={22} />
               <span style={{ flex: 1 }}>{c.name}</span>
-              <span className="muted">{accuracy(PREFIX[c.id])} · 클리어 {clearedCount(save, c.id)}/9</span>
+              <span className="muted">{accuracy(PREFIX[c.id])} · 클리어 {clearedCount(save, c.id)}/{totalStages(c.id)}</span>
             </div>
           ))}
         </div>

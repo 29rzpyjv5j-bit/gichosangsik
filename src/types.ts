@@ -3,7 +3,8 @@ export type CategoryId =
   | 'math' | 'music' | 'art' | 'current-affairs';
 
 export type Tier = 'basic' | 'mid' | 'advanced';
-export type StageNo = 1 | 2 | 3;
+// 스테이지 번호는 1부터. 카테고리·단계마다 스테이지 수가 다르다 (stageTitles 길이).
+export type StageNo = number;
 
 export const TIERS: Tier[] = ['basic', 'mid', 'advanced'];
 export const TIER_NAMES: Record<Tier, string> = {
@@ -30,7 +31,7 @@ export type CategoryInfo = {
   id: CategoryId;
   name: string;
   emoji: string;
-  stageTitles: Record<Tier, [string, string, string]>;
+  stageTitles: Record<Tier, string[]>;
 };
 
 export type LevelInfo = { level: number; title: string; threshold: number };

@@ -70,14 +70,14 @@ test('보기 중복을 잡아낸다', () => {
   expect(validateQuestions(bank, 'science').join(' ')).toContain('보기 중복');
 });
 
-test('빈 문항·힌트·해설을 잡아낸다', () => {
+test('빈 문항·해설을 잡아낸다 (힌트는 비워도 된다)', () => {
   const withEmptyPrompt = fullBank();
   withEmptyPrompt[0] = { ...withEmptyPrompt[0], prompt: '  ' };
   expect(validateQuestions(withEmptyPrompt, 'science').join(' ')).toContain('문항');
 
   const withEmptyHint = fullBank();
   withEmptyHint[0] = { ...withEmptyHint[0], hint: '  ' };
-  expect(validateQuestions(withEmptyHint, 'science').join(' ')).toContain('힌트');
+  expect(validateQuestions(withEmptyHint, 'science')).toEqual([]);
 
   const withEmptyExplanation = fullBank();
   withEmptyExplanation[0] = { ...withEmptyExplanation[0], explanation: '  ' };

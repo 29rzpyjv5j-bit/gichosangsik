@@ -19,3 +19,9 @@ test('등록된 카테고리의 스테이지는 5문제씩이다', () => {
     expect(questionsOfStage(category as CategoryId, 'basic', 1)).toHaveLength(5);
   }
 });
+
+test('한국사·세계사는 문제은행 600문항이 합쳐져 645문항이다', () => {
+  expect(BANK['korean-history']).toHaveLength(645);
+  expect(BANK['world-history']).toHaveLength(645);
+  expect(questionsOfStage('korean-history', 'advanced', 63)).toHaveLength(5);
+});

@@ -1,25 +1,32 @@
-import type { CategoryInfo } from '../types';
+import type { CategoryInfo, Tier } from '../types';
+import bankTitles from './questions/bank-stage-titles.json';
+
+// 문제은행 파일에서 들여온 스테이지(4단계부터)의 제목을 기존 3개 뒤에 잇는다
+function withBank(id: keyof typeof bankTitles, base: Record<Tier, string[]>): Record<Tier, string[]> {
+  const extra = bankTitles[id] as Record<Tier, string[]>;
+  return { basic: [...base.basic, ...extra.basic], mid: [...base.mid, ...extra.mid], advanced: [...base.advanced, ...extra.advanced] };
+}
 
 export const CATEGORIES: CategoryInfo[] = [
   {
     id: 'korean-history',
     name: '한국사',
     emoji: '🏛️',
-    stageTitles: {
+    stageTitles: withBank('korean-history', {
       basic: ['고조선과 삼국', '통일신라와 고려', '조선의 시작'],
       mid: ['조선의 정치와 문화', '조선 후기의 변화', '개항과 대한제국'],
       advanced: ['일제강점기', '광복과 분단', '현대 한국'],
-    },
+    }),
   },
   {
     id: 'world-history',
     name: '세계사',
     emoji: '🌍',
-    stageTitles: {
+    stageTitles: withBank('world-history', {
       basic: ['4대 문명', '그리스와 로마', '중세 유럽'],
       mid: ['르네상스와 대항해', '시민혁명', '산업혁명'],
       advanced: ['제국주의와 1차 대전', '2차 대전', '냉전과 현대'],
-    },
+    }),
   },
   {
     id: 'science',

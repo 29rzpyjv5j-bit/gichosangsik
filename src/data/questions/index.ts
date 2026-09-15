@@ -4,12 +4,14 @@ import { koreanHistory } from './korean-history';
 import { science } from './science';
 import { worldHistory } from './world-history';
 import { math } from './math';
+import koreanHistoryBank from './korean-history-bank.json';
+import worldHistoryBank from './world-history-bank.json';
 
 // 문제 파일을 집필할 때마다 아래에 등록한다.
 export const BANK: Partial<Record<CategoryId, Question[]>> = {
-  'korean-history': koreanHistory,
+  'korean-history': [...koreanHistory, ...(koreanHistoryBank as Question[])],
   science,
-  'world-history': worldHistory,
+  'world-history': [...worldHistory, ...(worldHistoryBank as Question[])],
   math,
 };
 
