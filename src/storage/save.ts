@@ -66,3 +66,29 @@ export function clearSave(): void {
     /* 쓸 수 없는 환경이면 지울 것도 없다 */
   }
 }
+
+const BACKUP_PREFIX = 'GS1-';
+
+// 기록을 다른 기기·앱으로 옮길 수 있는 문자열로 만든다
+export function encodeBackup(state: SaveState): string {
+  const bytes = new TextEncoder().encode(JSON.stringify(state));
+  let bin = '';
+  bytes.forEach((b) => { bin += String.fromCharCode(b); });
+  return BACKUP_PREFIX + btoa(bin);
+}
+
+export function decodeBackup(code: string): SaveState | null {
+  const trimmed = code.replace(/\s+/g, '');
+  if (!trimmed.startsWith(BACKUP_PREFIX)) return null;
+  try {
+    const bin = atob(trimmed.slice(BACKUP_PREFIX.length));
+    const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
+    const raw = JSON.parse(new TextDecoder().decode(bytes));
+    if (typeof raw?.totalPrize !== 'number' || typeof raw?.wallet !== 'number' || typeof raw?.stages !== 'object') {
+      return null;
+    }
+    return merge(raw);
+  } catch {
+    return null;
+  }
+}

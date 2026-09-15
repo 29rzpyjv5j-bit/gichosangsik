@@ -1,4 +1,4 @@
-import { defaultSave, loadSave, saveSave, clearSave, STORAGE_KEY } from './save';
+import { defaultSave, loadSave, saveSave, clearSave, STORAGE_KEY, encodeBackup, decodeBackup } from './save';
 import { makeSave } from '../test/factories';
 
 test('기본 상태는 상금 0, 기본 테마, 무료 아바타 3개를 갖는다', () => {
@@ -72,4 +72,17 @@ test('초기화할 수 없으면 죽지 않는다', () => {
   });
   expect(() => clearSave()).not.toThrow();
   spy.mockRestore();
+});
+
+test('백업 코드는 기록을 그대로 되돌린다', () => {
+  const state = { ...defaultSave(), totalPrize: 335_000, wallet: 65_000, wrongNotes: ['kh-b-01'] };
+  const code = encodeBackup(state);
+  expect(code.startsWith('GS1-')).toBe(true);
+  expect(decodeBackup(`  ${code}\n`)).toEqual(state);
+});
+
+test('잘못된 백업 코드는 거절한다', () => {
+  expect(decodeBackup('hello')).toBeNull();
+  expect(decodeBackup('GS1-!!!')).toBeNull();
+  expect(decodeBackup(`GS1-${btoa('{"a":1}')}`)).toBeNull();
 });

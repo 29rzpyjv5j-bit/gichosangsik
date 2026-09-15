@@ -59,7 +59,8 @@ export type Action =
   | { type: 'WEAR_OUTFIT'; slot: OutfitSlot; id: string | null }
   | { type: 'SET_THEME'; theme: ThemeId }
   | { type: 'SET_AVATAR'; avatar: AvatarId }
-  | { type: 'RESET_ALL' };
+  | { type: 'RESET_ALL' }
+  | { type: 'IMPORT_SAVE'; save: SaveState };
 
 export function initialAppState(save: SaveState, warning: StorageWarning): AppState {
   return { save, session: null, lastResult: null, storageWarning: warning };
@@ -330,6 +331,9 @@ export function gameReducer(state: AppState, action: Action): AppState {
 
     case 'RESET_ALL':
       return { ...state, save: defaultSave(), session: null, lastResult: null };
+
+    case 'IMPORT_SAVE':
+      return { ...state, save: action.save, session: null, lastResult: null };
 
     default:
       return state;

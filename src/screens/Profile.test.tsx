@@ -58,3 +58,16 @@ test('초기화는 두 번 눌러야 실행된다', async () => {
   await userEvent.click(screen.getByRole('button', { name: /정말 지울게요/ }));
   expect(screen.getAllByText('0원')).toHaveLength(2);
 });
+
+test('백업 코드로 기록을 불러온다', async () => {
+  const { encodeBackup, defaultSave } = await import('../storage/save');
+  saveSave(makeSave());
+  renderProfile();
+  const code = encodeBackup({ ...defaultSave(), totalPrize: 777_000, wallet: 12_000 });
+  await userEvent.click(screen.getByRole('textbox', { name: '백업 코드 입력' }));
+  await userEvent.paste(code);
+  await userEvent.click(screen.getByRole('button', { name: '코드로 불러오기' }));
+  await userEvent.click(screen.getByRole('button', { name: '이 기록으로 바꾸기' }));
+  expect(screen.getByText('777,000원')).toBeInTheDocument();
+  expect(screen.getByText('12,000원')).toBeInTheDocument();
+});

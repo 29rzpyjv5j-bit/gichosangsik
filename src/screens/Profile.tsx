@@ -8,6 +8,7 @@ import { CATEGORIES } from '../data/categories';
 import { formatMoney } from '../components/Money';
 import { Penguin } from '../components/Penguin';
 import { Room } from '../components/Room';
+import { BackupCard } from '../components/BackupCard';
 import { Icon, Landmark } from '../components/Icons';
 
 const PREFIX: Record<string, string> = {
@@ -101,6 +102,8 @@ export default function Profile() {
           ))}
         </div>
       </div>
+
+      <BackupCard />
 
       {confirming ? (
         <div style={{ display: 'grid', gap: 8 }}>
