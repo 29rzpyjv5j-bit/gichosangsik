@@ -1,5 +1,5 @@
 export type CategoryId =
-  | 'korean-history' | 'world-history' | 'science'
+  | 'korean-history' | 'world-history' | 'modern-history' | 'science'
   | 'math' | 'music' | 'art' | 'current-affairs';
 
 export type Tier = 'basic' | 'mid' | 'advanced';

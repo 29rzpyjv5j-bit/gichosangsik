@@ -159,6 +159,12 @@ const LANDMARKS: Record<CategoryId, ReactNode> = {
     <path d="M6 32c8-2 14-10 24-12 10 2 16 10 24 12-6 2-12 0-24 0s-18 2-24 0z" fill="url(#g-coral)" />
     <path d="M12 22c6-1 10-6 18-8 8 2 12 7 18 8-5 2-10 0-18 0s-13 2-18 0z" fill="#7c63c9" />
   </>),
+  'modern-history': (<>
+    <circle cx="30" cy="32" r="20" fill="#fff6ea" stroke="url(#g-coral)" strokeWidth="4" />
+    <path d="M30 20v13l9 6" stroke="#5a3e36" strokeWidth="3.4" strokeLinecap="round" fill="none" />
+    <circle cx="30" cy="32" r="2.6" fill="#5a3e36" />
+    <path d="M14 12l6 5M46 12l-6 5" stroke="#7c63c9" strokeWidth="4" strokeLinecap="round" />
+  </>),
   science: (<>
     <path d="M24 8h12v14l12 22a6 6 0 01-5 8H17a6 6 0 01-5-8l12-22z" fill="#eaf6ff" />
     <path d="M15 38h30l3 6a6 6 0 01-5 8H17a6 6 0 01-5-8z" fill="url(#g-mint)" />
@@ -209,6 +215,7 @@ export const ISLAND_COLOR: Record<CategoryId, string> = {
   music: '#ffd6e5',
   art: '#d6ecff',
   'current-affairs': '#ffe2c0',
+  'modern-history': '#cfe0ff',
 };
 
 export function IslandShape({ color, width }: { color: string; width: number }) {

@@ -1,13 +1,13 @@
 import { CATEGORIES } from './categories';
 import { TIERS } from '../types';
 
-test('카테고리는 7개다', () => {
-  expect(CATEGORIES).toHaveLength(7);
+test('카테고리는 8개다', () => {
+  expect(CATEGORIES).toHaveLength(8);
 });
 
 test('카테고리 id가 유일하다', () => {
   const ids = CATEGORIES.map((c) => c.id);
-  expect(new Set(ids).size).toBe(7);
+  expect(new Set(ids).size).toBe(8);
 });
 
 test('카테고리마다 단계별 스테이지 제목이 3개 이상 있다', () => {

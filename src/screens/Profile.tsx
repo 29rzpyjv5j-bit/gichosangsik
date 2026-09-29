@@ -12,7 +12,7 @@ import { BackupCard } from '../components/BackupCard';
 import { Icon, Landmark } from '../components/Icons';
 
 const PREFIX: Record<string, string> = {
-  'korean-history': 'kh-', 'world-history': 'wh-', science: 'sc-',
+  'korean-history': 'kh-', 'world-history': 'wh-', 'modern-history': 'mh-', science: 'sc-',
   math: 'ma-', music: 'mu-', art: 'ar-', 'current-affairs': 'ca-',
 };
 

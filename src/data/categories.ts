@@ -7,6 +7,11 @@ function withBank(id: keyof typeof bankTitles, base: Record<Tier, string[]>): Re
   return { basic: [...base.basic, ...extra.basic], mid: [...base.mid, ...extra.mid], advanced: [...base.advanced, ...extra.advanced] };
 }
 
+// 문제은행만 있는 섬은 1단계부터 은행의 스테이지로 채운다
+function bankOnly(id: keyof typeof bankTitles): Record<Tier, string[]> {
+  return bankTitles[id] as Record<Tier, string[]>;
+}
+
 export const CATEGORIES: CategoryInfo[] = [
   {
     id: 'korean-history',
@@ -29,6 +34,12 @@ export const CATEGORIES: CategoryInfo[] = [
     }),
   },
   {
+    id: 'modern-history',
+    name: '근현대사',
+    emoji: '🕰️',
+    stageTitles: bankOnly('modern-history'),
+  },
+  {
     id: 'science',
     name: '과학',
     emoji: '🔬',
@@ -42,41 +53,29 @@ export const CATEGORIES: CategoryInfo[] = [
     id: 'math',
     name: '수학',
     emoji: '➗',
-    stageTitles: {
+    stageTitles: withBank('math', {
       basic: ['수와 단위', '도형의 기초', '비와 비율'],
       mid: ['방정식', '확률과 통계', '평면과 입체'],
       advanced: ['수의 성질', '함수와 그래프', '수학사와 상수'],
-    },
+    }),
   },
   {
     id: 'music',
     name: '음악',
     emoji: '🎵',
-    stageTitles: {
-      basic: ['악기와 소리', '음표와 박자', '노래의 종류'],
-      mid: ['서양 고전음악', '한국 전통음악', '오페라와 발레'],
-      advanced: ['시대별 작곡가', '화성과 조성', '현대 음악과 대중음악'],
-    },
+    stageTitles: bankOnly('music'),
   },
   {
     id: 'art',
     name: '예술',
     emoji: '🎨',
-    stageTitles: {
-      basic: ['색과 그림', '유명한 그림', '조각과 건축'],
-      mid: ['르네상스 미술', '인상주의', '한국 미술'],
-      advanced: ['현대 미술', '사진과 영화', '미술관과 사조'],
-    },
+    stageTitles: bankOnly('art'),
   },
   {
     id: 'current-affairs',
     name: '시사',
     emoji: '📰',
-    stageTitles: {
-      basic: ['우리나라 정치 제도', '생활 속 경제', '국제기구'],
-      mid: ['경제 용어', '선거와 국회', '환경과 에너지'],
-      advanced: ['국제 정치와 무역', '금융과 물가', '기술과 사회'],
-    },
+    stageTitles: bankOnly('current-affairs'),
   },
 ];
 

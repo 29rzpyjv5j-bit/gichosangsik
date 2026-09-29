@@ -12,13 +12,14 @@ import { Icon, IslandShape, ISLAND_COLOR, Landmark } from '../components/Icons';
 
 // 순서가 아니라 지도처럼 흩어 놓은 섬 배치 (지도 영역 기준)
 const ISLANDS: { id: CategoryId; left: string; top: number; width: number }[] = [
-  { id: 'korean-history', left: '1%', top: 438, width: 150 },
-  { id: 'science', left: '50%', top: 322, width: 160 },
-  { id: 'world-history', left: '3%', top: 238, width: 128 },
-  { id: 'math', left: '52%', top: 160, width: 116 },
-  { id: 'music', left: '2%', top: 104, width: 108 },
-  { id: 'art', left: '36%', top: 20, width: 100 },
-  { id: 'current-affairs', left: '70%', top: 92, width: 92 },
+  { id: 'korean-history', left: '1%', top: 452, width: 146 },
+  { id: 'modern-history', left: '54%', top: 424, width: 128 },
+  { id: 'science', left: '44%', top: 306, width: 150 },
+  { id: 'world-history', left: '2%', top: 288, width: 122 },
+  { id: 'math', left: '52%', top: 178, width: 116 },
+  { id: 'music', left: '3%', top: 152, width: 110 },
+  { id: 'art', left: '34%', top: 34, width: 106 },
+  { id: 'current-affairs', left: '72%', top: 66, width: 94 },
 ];
 
 export default function Home() {
@@ -66,7 +67,7 @@ export default function Home() {
       <div
         style={{
           position: 'relative',
-          height: 560,
+          height: 600,
           borderRadius: 30,
           overflow: 'hidden',
           background: '#9fd6ee',

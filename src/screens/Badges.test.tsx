@@ -18,13 +18,13 @@ function renderBadges() {
   );
 }
 
-test('뱃지 18개가 모두 보인다', () => {
+test('뱃지 19개가 모두 보인다', () => {
   saveSave(makeSave());
   renderBadges();
   expect(screen.getByText('한국사 마스터')).toBeInTheDocument();
   expect(screen.getByText('첫 만점')).toBeInTheDocument();
   expect(screen.getByText('척척박사')).toBeInTheDocument();
-  expect(screen.getByText(/0 \/ 18/)).toBeInTheDocument();
+  expect(screen.getByText(/0 \/ 19/)).toBeInTheDocument();
 });
 
 test('미획득 뱃지에 진행률이 붙는다', () => {
@@ -38,9 +38,9 @@ test('미획득 뱃지에 진행률이 붙는다', () => {
   expect(screen.getByText('3/10')).toBeInTheDocument();
   expect(screen.getByText('9/30')).toBeInTheDocument();
   expect(screen.getByText('남은 오답 2개')).toBeInTheDocument();
-  // 문제은행을 들인 한국사·세계사는 129단계, 나머지는 9단계
-  expect(screen.getAllByText('클리어 0/9')).toHaveLength(5);
-  expect(screen.getAllByText('클리어 0/129')).toHaveLength(2);
+  // 섬마다 스테이지 수가 달라 문구도 다르다 (과학만 아직 9단계)
+  expect(screen.getAllByText(/^클리어 0\//)).toHaveLength(11); // 섬 8 + 단계 졸업 3
+  expect(screen.getAllByText('클리어 0/129')).toHaveLength(3);
 });
 
 test('획득한 뱃지는 획득일을 보여준다', () => {
@@ -50,5 +50,5 @@ test('획득한 뱃지는 획득일을 보여준다', () => {
   }));
   renderBadges();
   expect(screen.getByText('2026-09-13')).toBeInTheDocument();
-  expect(screen.getByText(/1 \/ 18/)).toBeInTheDocument();
+  expect(screen.getByText(/1 \/ 19/)).toBeInTheDocument();
 });

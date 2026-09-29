@@ -17,14 +17,14 @@ function clearAll(categories: CategoryId[], tiers = TIERS): SaveState {
   return makeSave({ stages });
 }
 
-test('뱃지는 18개이고 id가 유일하다', () => {
-  expect(BADGES).toHaveLength(18);
-  expect(new Set(BADGES.map((b) => b.id)).size).toBe(18);
+test('뱃지는 19개이고 id가 유일하다', () => {
+  expect(BADGES).toHaveLength(19);
+  expect(new Set(BADGES.map((b) => b.id)).size).toBe(19);
 });
 
 test('분류별 개수가 스펙과 맞는다', () => {
   const count = (g: string) => BADGES.filter((b) => b.group === g).length;
-  expect(count('category')).toBe(7);
+  expect(count('category')).toBe(8);
   expect(count('tier')).toBe(3);
   expect(count('perfect')).toBe(3);
   expect(count('wrong')).toBe(2);
@@ -50,7 +50,7 @@ test('카테고리 9스테이지를 다 깨면 그 카테고리 마스터 뱃지
   expect(BADGES.find((b) => b.id === 'master-math')!.earned(s)).toBe(false);
 });
 
-test('7개 카테고리 입문을 다 깨면 입문 졸업 뱃지를 얻는다', () => {
+test('모든 카테고리 입문을 다 깨면 입문 졸업 뱃지를 얻는다', () => {
   const ids = CATEGORIES.map((c) => c.id);
   const s = clearAll(ids, ['basic']);
   expect(BADGES.find((b) => b.id === 'graduate-basic')!.earned(s)).toBe(true);
